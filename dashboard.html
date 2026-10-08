@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RailReserve &bull; Passenger & Admin Dashboard</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        railway: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                            800: '#0c4a6e',
+                            900: '#082f49',
+                            950: '#031726',
+                        },
+                        saffron: {
+                            500: '#f97316',
+                            600: '#ea580c',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printableTicketModal, #printableTicketModal * {
+                visibility: visible;
+            }
+            #printableTicketModal {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col selection:bg-blue-600 selection:text-white">
+
+    <!-- Toast Notification Container -->
+    <div id="toast" class="fixed top-5 right-5 z-50 transform transition-all duration-300 translate-y-[-100px] opacity-0 pointer-events-none">
+        <div class="flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border bg-slate-900 text-white text-xs font-semibold" id="toastInner">
+            <i class="fa-solid fa-circle-check text-emerald-400 text-base" id="toastIcon"></i>
+            <span id="toastMsg">Operation successful</span>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD WRAPPER -->
+    <div class="flex flex-1 min-h-screen overflow-hidden">
+
+        <!-- ============================================== -->
+        <!-- SIDEBAR NAVIGATION                             -->
+        <!-- ============================================== -->
+        <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between border-r border-slate-800 shrink-0 z-30 transition-all duration-300" id="sidebar">
+            
+            <div>
+                <!-- Brand Header -->
+                <div class="h-20 px-6 flex items-center justify-between border-b border-slate-800/80">
+                    <a href="/" class="flex items-center gap-3 group">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-400 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition">
+                            <i class="fa-solid fa-train text-lg"></i>
+                        </div>
+                        <div>
+                            <span class="font-extrabold text-xl text-white tracking-tight">Rail<span class="text-sky-400">Reserve</span></span>
+                            <span class="text-[10px] block font-bold text-slate-400 uppercase tracking-wider">DBMS Dashboard</span>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- User Profile Summary in Sidebar -->
+                <div class="p-4 mx-3 my-4 bg-slate-800/60 rounded-2xl border border-slate-700/60 flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-extrabold text-base shrink-0 shadow-sm" id="sideUserAvatar">
+                        N
+                    </div>
+                    <div class="overflow-hidden flex-1">
+                        <div class="text-xs font-bold text-white truncate" id="sideUserName">Narendra M</div>
+                        <div class="text-[11px] text-slate-400 truncate" id="sideUserEmail">user@example.com</div>
+                        <div class="mt-1 flex items-center gap-1.5">
+                            <span class="text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-900 text-blue-200 border border-blue-700" id="sideUserRoleBadge">
+                                Passenger
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Links -->
+                <div class="px-3 space-y-1">
+                    <div class="px-3 pt-2 pb-1 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest">Main Menu</div>
+                    
+                    <button onclick="switchView('overview')" id="nav-overview" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-white bg-blue-600 transition">
+                        <i class="fa-solid fa-gauge-high text-sm w-4"></i>
+                        <span>Overview</span>
+                    </button>
+
+                    <button onclick="switchView('my-bookings')" id="nav-my-bookings" class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-ticket text-sm w-4"></i>
+                            <span>My Bookings</span>
+                        </div>
+                        <span class="text-[10px] font-bold bg-slate-800 text-sky-400 px-2 py-0.5 rounded-full" id="sideBookingCount">1</span>
+                    </button>
+
+                    <button onclick="switchView('quick-book')" id="nav-quick-book" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition">
+                        <i class="fa-solid fa-magnifying-glass text-sm w-4"></i>
+                        <span>Find & Book Trains</span>
+                    </button>
+
+                    <!-- ADMIN SECTION (Visible to Admin or when toggled) -->
+                    <div class="pt-4 pb-1 px-3 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest flex items-center justify-between">
+                        <span>Admin Controls</span>
+                        <span class="text-[9px] bg-saffron-500/20 text-saffron-400 px-1.5 py-0.2 rounded font-mono">DBMS</span>
+                    </div>
+
+                    <button onclick="switchView('admin-trains')" id="nav-admin-trains" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition">
+                        <i class="fa-solid fa-train-subway text-sm w-4"></i>
+                        <span>Manage Trains</span>
+                    </button>
+
+                    <button onclick="switchView('admin-all-bookings')" id="nav-admin-all-bookings" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition">
+                        <i class="fa-solid fa-table-list text-sm w-4"></i>
+                        <span>All System Bookings</span>
+                    </button>
+
+                    <button onclick="switchView('admin-logs')" id="nav-admin-logs" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition">
+                        <i class="fa-solid fa-clock-rotate-left text-sm w-4"></i>
+                        <span>System Audit Logs</span>
+                    </button>
+
+                    <button onclick="switchView('profile')" id="nav-profile" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition">
+                        <i class="fa-solid fa-user-gear text-sm w-4"></i>
+                        <span>Account & Security</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sidebar Bottom Info & Return Link -->
+            <div class="p-4 border-t border-slate-800 space-y-2">
+                <a href="/" class="flex items-center justify-center gap-2 w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition">
+                    <i class="fa-solid fa-arrow-left text-xs"></i>
+                    <span>Back to Portal Home</span>
+                </a>
+                <button onclick="logoutDashboard()" class="flex items-center justify-center gap-2 w-full py-2 px-3 text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 text-xs font-semibold rounded-xl transition">
+                    <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                    <span>Sign Out</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- ============================================== -->
+        <!-- MAIN CONTENT AREA                              -->
+        <!-- ============================================== -->
+        <main class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+
+            <!-- TOP APPLICATION BAR -->
+            <header class="h-20 bg-white border-b border-slate-200/80 px-6 sm:px-8 flex items-center justify-between sticky top-0 z-20 shadow-sm">
+                
+                <!-- Left Title / Breadcrumb -->
+                <div class="flex items-center gap-4">
+                    <button onclick="toggleSidebarMobile()" class="md:hidden text-slate-600 hover:text-slate-900 text-lg p-2 rounded-lg">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <div>
+                        <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight" id="pageHeaderTitle">
+                            Passenger Dashboard
+                        </h1>
+                        <p class="text-xs text-slate-500 font-medium hidden sm:block" id="pageHeaderSubtitle">
+                            Welcome back, review upcoming railway journeys and manage ticket bookings
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Right Quick Controls -->
+                <div class="flex items-center gap-3 sm:gap-4">
+                    
+                    <!-- Role Switcher Pill (Great for Demoing/Testing) -->
+                    <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
+                        <button onclick="setUserRoleMode('Passenger')" id="roleBtnPassenger" class="px-2.5 py-1 rounded-lg bg-white text-blue-700 shadow-sm transition">
+                            Passenger
+                        </button>
+                        <button onclick="setUserRoleMode('Admin')" id="roleBtnAdmin" class="px-2.5 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition">
+                            Admin
+                        </button>
+                    </div>
+
+                    <!-- DB Connection Status Pill -->
+                    <div class="hidden sm:flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200" id="dashDbStatus">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span id="dashDbText">MySQL Connected</span>
+                    </div>
+
+                    <!-- Quick New Ticket CTA -->
+                    <button onclick="switchView('quick-book')" class="hidden md:flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm hover:shadow transition">
+                        <i class="fa-solid fa-plus text-[10px]"></i>
+                        <span>Book Ticket</span>
+                    </button>
+                </div>
+            </header>
+
+
+            <!-- INNER VIEWS CONTAINER -->
+            <div class="p-6 sm:p-8 space-y-8 flex-1">
+
+                <!-- ============================================== -->
+                <!-- VIEW 1: OVERVIEW (PASSENGER)                   -->
+                <!-- ============================================== -->
+                <section id="view-overview" class="space-y-8">
+                    
+                    <!-- KPI Metric Cards Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                        
+                        <!-- Metric 1: Total Bookings -->
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Bookings</span>
+                                <div class="text-2xl font-black text-slate-900 mt-1" id="kpiTotalBookings">1</div>
+                                <span class="text-[11px] text-emerald-600 font-semibold mt-1 inline-block">
+                                    <i class="fa-solid fa-arrow-trend-up"></i> Active Record
+                                </span>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-ticket"></i>
+                            </div>
+                        </div>
+
+                        <!-- Metric 2: Upcoming Journey -->
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Upcoming Trips</span>
+                                <div class="text-2xl font-black text-blue-600 mt-1" id="kpiUpcomingTrips">1</div>
+                                <span class="text-[11px] text-slate-500 font-medium mt-1 inline-block">Scheduled departures</span>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-calendar-check"></i>
+                            </div>
+                        </div>
+
+                        <!-- Metric 3: Confirmed PNRs -->
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Confirmed PNR</span>
+                                <div class="text-2xl font-black text-emerald-600 mt-1" id="kpiConfirmed">1</div>
+                                <span class="text-[11px] text-emerald-600 font-semibold mt-1 inline-block">Chart Prepared</span>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </div>
+                        </div>
+
+                        <!-- Metric 4: Total Spent -->
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Fare Spent</span>
+                                <div class="text-2xl font-black text-slate-900 mt-1" id="kpiTotalSpent">₹950</div>
+                                <span class="text-[11px] text-slate-400 font-medium mt-1 inline-block">ACID ledger total</span>
+                            </div>
+                            <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl">
+                                <i class="fa-solid fa-indian-rupee-sign"></i>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- UPCOMING TICKET HIGHLIGHT CARD -->
+                    <div class="bg-gradient-to-r from-blue-900 via-sky-900 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+                        <div class="absolute -right-10 -bottom-10 opacity-10 text-9xl text-white pointer-events-none">
+                            <i class="fa-solid fa-train"></i>
+                        </div>
+
+                        <div class="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                            <div class="space-y-3">
+                                <div class="flex items-center gap-2">
+                                    <span class="bg-saffron-500 text-white text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full tracking-wider">
+                                        Next Journey
+                                    </span>
+                                    <span class="text-xs text-sky-200 font-mono font-bold" id="heroPnr">PNR: 8249102847</span>
+                                </div>
+                                <h3 class="text-2xl sm:text-3xl font-black tracking-tight" id="heroTrainName">
+                                    20607 &bull; Vande Bharat Express
+                                </h3>
+                                <div class="flex items-center gap-4 text-sm text-sky-200">
+                                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-calendar"></i> <span id="heroDate">Oct 15, 2026</span></span>
+                                    <span>&bull;</span>
+                                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-couch"></i> <span id="heroClass">AC Chair Car (CC)</span></span>
+                                    <span>&bull;</span>
+                                    <span class="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase" id="heroStatus">CNF</span>
+                                </div>
+                                <div class="flex items-center gap-6 pt-2 text-sm">
+                                    <div>
+                                        <div class="text-xs text-slate-400">From</div>
+                                        <div class="font-bold text-white text-base" id="heroFrom">Chennai Central (MAS)</div>
+                                    </div>
+                                    <i class="fa-solid fa-arrow-right text-sky-400 text-lg"></i>
+                                    <div>
+                                        <div class="text-xs text-slate-400">To</div>
+                                        <div class="font-bold text-white text-base" id="heroTo">KSR Bengaluru (SBC)</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                                <button onclick="printMockBookingTicket()" class="bg-white hover:bg-slate-100 text-slate-900 font-bold px-5 py-3 rounded-xl text-xs shadow-md transition flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-print"></i>
+                                    <span>Download E-Ticket</span>
+                                </button>
+                                <button onclick="switchView('my-bookings')" class="bg-sky-800/80 hover:bg-sky-700 text-white font-bold px-5 py-3 rounded-xl text-xs border border-sky-600 transition flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-list-check"></i>
+                                    <span>Manage All Tickets</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RECENT BOOKINGS PREVIEW TABLE -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                        <div class="flex items-center justify-between mb-5">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900">Recent Booking Records</h3>
+                                <p class="text-xs text-slate-500">Live data synchronised with MySQL `bookings` table</p>
+                            </div>
+                            <button onclick="switchView('my-bookings')" class="text-xs font-bold text-blue-600 hover:underline">
+                                View Full History ➔
+                            </button>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 text-slate-600 uppercase font-bold text-[10px] tracking-wider border-y border-slate-200">
+                                    <tr>
+                                        <th class="py-3 px-4">PNR Number</th>
+                                        <th class="py-3 px-4">Train Details</th>
+                                        <th class="py-3 px-4">Route</th>
+                                        <th class="py-3 px-4">Journey Date</th>
+                                        <th class="py-3 px-4">Total Fare</th>
+                                        <th class="py-3 px-4">Status</th>
+                                        <th class="py-3 px-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="overviewBookingsTableBody" class="divide-y divide-slate-100 text-slate-700 font-medium">
+                                    <!-- Populated dynamically via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </section>
+
+
+                <!-- ============================================== -->
+                <!-- VIEW 2: MY BOOKINGS LIST                       -->
+                <!-- ============================================== -->
+                <section id="view-my-bookings" class="hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-900">My Booked Tickets</h2>
+                            <p class="text-xs text-slate-500">Manage all your travel itineraries, view coaches & cancel tickets</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="fetchUserBookings()" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-2 rounded-xl text-xs font-semibold shadow-sm transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-arrows-rotate"></i> Refresh
+                            </button>
+                            <button onclick="switchView('quick-book')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold shadow transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-plus"></i> New Reservation
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Bookings Cards Container -->
+                    <div id="myBookingsContainer" class="space-y-4">
+                        <!-- Populated by JS -->
+                    </div>
+                </section>
+
+
+                <!-- ============================================== -->
+                <!-- VIEW 3: QUICK IN-DASHBOARD BOOKING ENGINE     -->
+                <!-- ============================================== -->
+                <section id="view-quick-book" class="hidden space-y-6">
+                    <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm">
+                        <div class="max-w-2xl mb-6">
+                            <span class="text-xs font-extrabold text-blue-600 uppercase tracking-widest bg-blue-50 px-2.5 py-1 rounded-full">Book New Journey</span>
+                            <h2 class="text-2xl font-extrabold text-slate-900 mt-2">Find & Reserve Train Seats</h2>
+                            <p class="text-xs text-slate-500 mt-1">Directly query the railway database and complete transaction in one click.</p>
+                        </div>
+
+                        <form id="dashSearchForm" onsubmit="handleDashSearch(event)" class="space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">From Station</label>
+                                    <select id="dashFromStation" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                        <option value="MAS" selected>Chennai Central (MAS)</option>
+                                        <option value="NDLS">New Delhi (NDLS)</option>
+                                        <option value="SBC">KSR Bengaluru (SBC)</option>
+                                        <option value="CSTM">Mumbai CSMT (CSTM)</option>
+                                        <option value="HWH">Howrah Jn (HWH)</option>
+                                        <option value="PDY">Puducherry (PDY)</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">To Station</label>
+                                    <select id="dashToStation" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                        <option value="SBC" selected>KSR Bengaluru (SBC)</option>
+                                        <option value="MAS">Chennai Central (MAS)</option>
+                                        <option value="NDLS">New Delhi (NDLS)</option>
+                                        <option value="CSTM">Mumbai CSMT (CSTM)</option>
+                                        <option value="HWH">Howrah Jn (HWH)</option>
+                                        <option value="PDY">Puducherry (PDY)</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Journey Date</label>
+                                    <input type="date" id="dashJourneyDate" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-6 py-3 rounded-xl shadow transition flex items-center gap-2">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <span>Search Trains</span>
+                            </button>
+                        </form>
+
+                        <!-- Search results inside dashboard -->
+                        <div id="dashResultsContainer" class="mt-8 pt-6 border-t border-slate-200 hidden space-y-4">
+                            <h3 class="text-sm font-bold text-slate-800" id="dashResultsTitle">Available Trains</h3>
+                            <div id="dashTrainsList" class="space-y-3">
+                                <!-- Injected by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+
+                <!-- ============================================== -->
+                <!-- VIEW 4: ADMIN - MANAGE TRAINS                  -->
+                <!-- ============================================== -->
+                <section id="view-admin-trains" class="hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div>
+                            <span class="text-[10px] font-extrabold uppercase tracking-widest text-saffron-500 bg-saffron-50 px-2.5 py-1 rounded-full border border-saffron-200">Admin Control</span>
+                            <h2 class="text-xl font-bold text-slate-900 mt-2">Manage Railway Trains & Fleet</h2>
+                            <p class="text-xs text-slate-500">Live DDL/DML interface for `trains` table in MySQL</p>
+                        </div>
+                        <button onclick="openAddTrainModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2">
+                            <i class="fa-solid fa-plus"></i> Add New Train
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 text-slate-600 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
+                                    <tr>
+                                        <th class="py-3.5 px-4">Train #</th>
+                                        <th class="py-3.5 px-4">Train Name</th>
+                                        <th class="py-3.5 px-4">Origin Station</th>
+                                        <th class="py-3.5 px-4">Destination Station</th>
+                                        <th class="py-3.5 px-4">Total Coaches</th>
+                                        <th class="py-3.5 px-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminTrainsTableBody" class="divide-y divide-slate-100 text-slate-700 font-medium">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+
+                <!-- ============================================== -->
+                <!-- VIEW 5: ADMIN - ALL SYSTEM BOOKINGS            -->
+                <!-- ============================================== -->
+                <section id="view-admin-all-bookings" class="hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div>
+                            <span class="text-[10px] font-extrabold uppercase tracking-widest text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200">Admin Master</span>
+                            <h2 class="text-xl font-bold text-slate-900 mt-2">All System Reservations</h2>
+                            <p class="text-xs text-slate-500">Complete ledger of all bookings recorded across all users</p>
+                        </div>
+                        <button onclick="loadAdminBookings()" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-2 rounded-xl text-xs font-semibold shadow-sm transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrows-rotate"></i> Refresh Records
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 text-slate-600 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
+                                    <tr>
+                                        <th class="py-3.5 px-4">PNR</th>
+                                        <th class="py-3.5 px-4">Passenger / Account</th>
+                                        <th class="py-3.5 px-4">Train Name</th>
+                                        <th class="py-3.5 px-4">Journey Date</th>
+                                        <th class="py-3.5 px-4">Total Fare</th>
+                                        <th class="py-3.5 px-4">Booking Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminAllBookingsTableBody" class="divide-y divide-slate-100 text-slate-700 font-medium">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+
+                <!-- ============================================== -->
+                <!-- VIEW 6: ADMIN - SYSTEM AUDIT LOGS              -->
+                <!-- ============================================== -->
+                <section id="view-admin-logs" class="hidden space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] font-extrabold uppercase tracking-widest text-sky-600 bg-sky-50 px-2.5 py-1 rounded-full border border-sky-200">Audit Trail</span>
+                            <h2 class="text-xl font-bold text-slate-900 mt-2">System Audit Logs</h2>
+                            <p class="text-xs text-slate-500">Live feed from `system_logs` recording transactions & authentication</p>
+                        </div>
+                        <button onclick="loadAdminLogs()" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-2 rounded-xl text-xs font-semibold shadow-sm transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrows-rotate"></i> Refresh Logs
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                        <div class="space-y-3" id="adminLogsContainer">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </section>
+
+
+                <!-- ============================================== -->
+                <!-- VIEW 7: ACCOUNT & PROFILE SETTINGS             -->
+                <!-- ============================================== -->
+                <section id="view-profile" class="hidden space-y-6">
+                    <div class="max-w-2xl bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm">
+                        <h2 class="text-xl font-bold text-slate-900 mb-1">Account & Preferences</h2>
+                        <p class="text-xs text-slate-500 mb-6">Your personal passenger record in the DBMS database</p>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Full Name</label>
+                                <input type="text" id="profName" disabled class="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-700">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Email Address</label>
+                                <input type="email" id="profEmail" disabled class="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-700">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Role Assigned</label>
+                                    <input type="text" id="profRole" disabled class="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-700">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Account Status</label>
+                                    <input type="text" value="Active &bull; Verified" disabled class="w-full bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-emerald-800">
+                                </div>
+                            </div>
+
+                            <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
+                                <span class="text-xs text-slate-400">Password encrypted with bcryptjs (Salt-10 rounds)</span>
+                                <button onclick="logoutDashboard()" class="text-xs text-rose-600 hover:underline font-bold">
+                                    Log Out
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+
+    <!-- ============================================== -->
+    <!-- MODAL: ADD TRAIN (ADMIN)                       -->
+    <!-- ============================================== -->
+    <div id="addTrainModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-lg p-6 sm:p-8 rounded-3xl shadow-2xl border border-slate-200 relative">
+            <button onclick="closeAddTrainModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <h3 class="text-xl font-bold text-slate-900 mb-1">Add New Train</h3>
+            <p class="text-xs text-slate-500 mb-5">Insert new train record into MySQL `trains` table</p>
+
+            <form id="addTrainForm" onsubmit="handleCreateTrain(event)" class="space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Train Number (PK)</label>
+                        <input type="number" id="newTrainNum" required placeholder="e.g. 12626" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Total Coaches</label>
+                        <input type="number" id="newTrainCoaches" required value="20" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Train Name</label>
+                    <input type="text" id="newTrainName" required placeholder="e.g. Kerala Superfast Express" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Source Station</label>
+                        <select id="newTrainSource" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="1">1 - New Delhi (NDLS)</option>
+                            <option value="2" selected>2 - Chennai Central (MAS)</option>
+                            <option value="3">3 - KSR Bengaluru (SBC)</option>
+                            <option value="4">4 - Mumbai CSMT (CSTM)</option>
+                            <option value="5">5 - Howrah Junction (HWH)</option>
+                            <option value="6">6 - Puducherry (PDY)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Destination Station</label>
+                        <select id="newTrainDest" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="1" selected>1 - New Delhi (NDLS)</option>
+                            <option value="2">2 - Chennai Central (MAS)</option>
+                            <option value="3">3 - KSR Bengaluru (SBC)</option>
+                            <option value="4">4 - Mumbai CSMT (CSTM)</option>
+                            <option value="5">5 - Howrah Junction (HWH)</option>
+                            <option value="6">6 - Puducherry (PDY)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" id="addTrainSubmitBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow transition mt-2">
+                    Save to Database
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ============================================== -->
+    <!-- MODAL: PRINTABLE E-TICKET                      -->
+    <!-- ============================================== -->
+    <div id="printableTicketModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden relative">
+            
+            <!-- Top Controls (no-print) -->
+            <div class="p-4 bg-slate-100 flex items-center justify-between border-b border-slate-200 no-print">
+                <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <i class="fa-solid fa-ticket text-blue-600"></i> Indian Railways E-Reservation Slip
+                </span>
+                <div class="flex items-center gap-2">
+                    <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                        <i class="fa-solid fa-print"></i> Print
+                    </button>
+                    <button onclick="closeTicketModal()" class="text-slate-400 hover:text-slate-700 text-sm p-1.5 rounded-lg">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ticket Body -->
+            <div class="p-6 sm:p-8 font-mono text-xs space-y-5" id="printableTicketBody">
+                <div class="flex items-center justify-between border-b-2 border-slate-900 pb-3">
+                    <div>
+                        <h2 class="text-lg font-black tracking-tight text-slate-900">INDIAN RAILWAYS E-TICKET</h2>
+                        <p class="text-[10px] text-slate-500">ELECTRONIC RESERVATION SLIP (ERS)</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs font-bold text-slate-500">PNR NUMBER</span>
+                        <div class="text-base font-black text-blue-700" id="ticketPnr">8249102847</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 text-[11px]">
+                    <div>
+                        <span class="text-slate-400 block text-[9px]">TRAIN NUMBER & NAME</span>
+                        <strong id="ticketTrain">20607 - Vande Bharat Express</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[9px]">DATE OF JOURNEY</span>
+                        <strong id="ticketDate">2026-10-15</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[9px]">CLASS / QUOTA</span>
+                        <strong id="ticketClass">CC / GENERAL</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[9px]">BOOKING STATUS</span>
+                        <strong class="text-emerald-700" id="ticketStatus">CONFIRMED (CNF)</strong>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 border-y border-slate-200 py-3 text-[11px]">
+                    <div>
+                        <span class="text-slate-400 block text-[9px]">FROM (BOARDING)</span>
+                        <strong id="ticketFrom">Chennai Central (MAS)</strong>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-slate-400 block text-[9px]">TO (DESTINATION)</span>
+                        <strong id="ticketTo">KSR Bengaluru (SBC)</strong>
+                    </div>
+                </div>
+
+                <div>
+                    <span class="text-[10px] font-bold uppercase text-slate-500 block mb-1">Passenger Manifest</span>
+                    <table class="w-full text-left border border-slate-200 rounded-lg text-[11px]">
+                        <thead class="bg-slate-100 font-bold border-b border-slate-200">
+                            <tr>
+                                <th class="p-2">#</th>
+                                <th class="p-2">Passenger Name</th>
+                                <th class="p-2">Age / Sex</th>
+                                <th class="p-2">Booking Status</th>
+                                <th class="p-2">Current Coach & Berth</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ticketPassengersBody" class="divide-y divide-slate-100">
+                            <tr>
+                                <td class="p-2">1</td>
+                                <td class="p-2 font-bold" id="ticketPassName">Narendra</td>
+                                <td class="p-2" id="ticketPassAge">24 / M</td>
+                                <td class="p-2 text-emerald-700 font-bold">CNF</td>
+                                <td class="p-2 font-bold" id="ticketPassSeat">C4 - 42 (Window)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex items-center justify-between pt-2 border-t border-slate-900 text-[11px]">
+                    <div>
+                        <span class="text-slate-400 block text-[9px]">TOTAL TICKET FARE (INR)</span>
+                        <strong class="text-base font-black text-slate-900" id="ticketFare">₹950.00</strong>
+                    </div>
+                    <div class="text-right text-[10px] text-slate-500">
+                        <span>Payment Status: <strong class="text-emerald-700">COMPLETED</strong></span>
+                        <div>ACID Transaction Timestamp Verified</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- ============================================== -->
+    <!-- CLIENT JAVASCRIPT APPLICATION LOGIC            -->
+    <!-- ============================================== -->
+    <script>
+        const API_URL = "/api";
+
+        // State
+        let currentUser = null;
+        let userBookings = [];
+        let allAdminBookings = [];
+        let allTrains = [];
+        let activeRole = 'Passenger';
+
+        document.addEventListener("DOMContentLoaded", () => {
+            initSession();
+            checkDbHealth();
+            initDashDates();
+            fetchUserBookings();
+            loadAllTrains();
+        });
+
+        // Initialize user session
+        function initSession() {
+            const stored = localStorage.getItem("railway_user");
+            if (stored) {
+                try {
+                    currentUser = JSON.parse(stored);
+                } catch {
+                    currentUser = null;
+                }
+            }
+
+            // Default fallback passenger if not logged in
+            if (!currentUser) {
+                currentUser = {
+                    userId: 1,
+                    name: 'Narendra',
+                    email: '24btcsepy0020@pondiuni.ac.in',
+                    role: 'Passenger'
+                };
+            }
+
+            activeRole = currentUser.role || 'Passenger';
+
+            // Populate UI with profile info
+            document.getElementById("sideUserName").textContent = currentUser.name;
+            document.getElementById("sideUserEmail").textContent = currentUser.email;
+            document.getElementById("sideUserAvatar").textContent = (currentUser.name || 'U')[0].toUpperCase();
+            document.getElementById("sideUserRoleBadge").textContent = activeRole;
+
+            document.getElementById("profName").value = currentUser.name;
+            document.getElementById("profEmail").value = currentUser.email;
+            document.getElementById("profRole").value = currentUser.role || 'Passenger';
+
+            updateRoleUI();
+        }
+
+        // Check MySQL Database Connection Health
+        async function checkDbHealth() {
+            const textEl = document.getElementById("dashDbText");
+            try {
+                const res = await fetch(`${API_URL}/db-status`);
+                const data = await res.json();
+                if (res.ok && data.status === 'connected') {
+                    textEl.textContent = `MySQL: ${data.database}`;
+                } else {
+                    textEl.textContent = "MySQL: Disconnected";
+                }
+            } catch {
+                textEl.textContent = "Server Offline (Mock Mode)";
+            }
+        }
+
+        function initDashDates() {
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const el = document.getElementById("dashJourneyDate");
+            if (el) {
+                el.value = tomorrow.toISOString().split("T")[0];
+                el.min = today.toISOString().split("T")[0];
+            }
+        }
+
+        // ROLE SWITCHER (Passenger vs Admin)
+        function setUserRoleMode(role) {
+            activeRole = role;
+            updateRoleUI();
+            showToast(`Switched view to ${role} Mode`, "fa-solid fa-user-shield");
+        }
+
+        function updateRoleUI() {
+            const pBtn = document.getElementById("roleBtnPassenger");
+            const aBtn = document.getElementById("roleBtnAdmin");
+            const titleEl = document.getElementById("pageHeaderTitle");
+            const badgeEl = document.getElementById("sideUserRoleBadge");
+
+            if (activeRole === 'Admin') {
+                pBtn.className = "px-2.5 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition";
+                aBtn.className = "px-2.5 py-1 rounded-lg bg-white text-saffron-600 shadow-sm transition font-bold";
+                titleEl.textContent = "Admin Control Dashboard";
+                badgeEl.className = "text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-saffron-950 text-saffron-300 border border-saffron-700";
+                badgeEl.textContent = "Administrator";
+                // Switch to admin view if in overview
+                loadAdminStats();
+                loadAdminBookings();
+                loadAdminLogs();
+            } else {
+                aBtn.className = "px-2.5 py-1 rounded-lg text-slate-500 hover:text-slate-900 transition";
+                pBtn.className = "px-2.5 py-1 rounded-lg bg-white text-blue-700 shadow-sm transition font-bold";
+                titleEl.textContent = "Passenger Dashboard";
+                badgeEl.className = "text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-900 text-blue-200 border border-blue-700";
+                badgeEl.textContent = "Passenger";
+            }
+        }
+
+        // SWITCH VIEW TABS
+        function switchView(viewName) {
+            const views = [
+                'overview', 
+                'my-bookings', 
+                'quick-book', 
+                'admin-trains', 
+                'admin-all-bookings', 
+                'admin-logs', 
+                'profile'
+            ];
+
+            views.forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                if (el) el.classList.add("hidden");
+                const nav = document.getElementById(`nav-${v}`);
+                if (nav) nav.className = "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition";
+            });
+
+            const activeEl = document.getElementById(`view-${viewName}`);
+            if (activeEl) activeEl.classList.remove("hidden");
+
+            const activeNav = document.getElementById(`nav-${viewName}`);
+            if (activeNav) activeNav.className = "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-white bg-blue-600 transition";
+
+            if (viewName === 'admin-trains') loadAllTrains();
+            if (viewName === 'admin-all-bookings') loadAdminBookings();
+            if (viewName === 'admin-logs') loadAdminLogs();
+        }
+
+        // FETCH USER BOOKINGS
+        async function fetchUserBookings() {
+            try {
+                const res = await fetch(`${API_URL}/user/bookings/${currentUser.userId || 1}`);
+                userBookings = await res.json();
+                renderUserBookings();
+            } catch (err) {
+                console.error("Failed to fetch bookings:", err);
+            }
+        }
+
+        function renderUserBookings() {
+            const countEl = document.getElementById("sideBookingCount");
+            const kpiTotal = document.getElementById("kpiTotalBookings");
+            const kpiUpcoming = document.getElementById("kpiUpcomingTrips");
+            const kpiConf = document.getElementById("kpiConfirmed");
+            const kpiSpent = document.getElementById("kpiTotalSpent");
+
+            const overviewTbody = document.getElementById("overviewBookingsTableBody");
+            const myBookingsCont = document.getElementById("myBookingsContainer");
+
+            countEl.textContent = userBookings.length;
+            kpiTotal.textContent = userBookings.length;
+
+            const confirmedCount = userBookings.filter(b => b.booking_status === 'Confirmed').length;
+            kpiUpcoming.textContent = confirmedCount;
+            kpiConf.textContent = confirmedCount;
+
+            const totalSpent = userBookings
+                .filter(b => b.booking_status === 'Confirmed')
+                .reduce((acc, b) => acc + parseFloat(b.total_fare || 0), 0);
+            kpiSpent.textContent = `₹${totalSpent.toFixed(0)}`;
+
+            // Update next journey card
+            if (userBookings.length > 0) {
+                const first = userBookings[0];
+                document.getElementById("heroPnr").textContent = `PNR: ${first.pnr_number}`;
+                document.getElementById("heroTrainName").textContent = `${first.train_number} • ${first.train_name}`;
+                document.getElementById("heroDate").textContent = first.journey_date;
+                document.getElementById("heroFrom").textContent = `${first.source_name} (${first.source_code})`;
+                document.getElementById("heroTo").textContent = `${first.dest_name} (${first.dest_code})`;
+                document.getElementById("heroStatus").textContent = first.booking_status;
+            }
+
+            // Overview Table Rows
+            overviewTbody.innerHTML = userBookings.slice(0, 5).map(b => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="py-3 px-4 font-mono font-bold text-blue-700">${b.pnr_number}</td>
+                    <td class="py-3 px-4">
+                        <span class="font-bold text-slate-800">${b.train_name}</span>
+                        <span class="text-[10px] text-slate-400 block font-mono">#${b.train_number}</span>
+                    </td>
+                    <td class="py-3 px-4">${b.source_code} ➔ ${b.dest_code}</td>
+                    <td class="py-3 px-4">${b.journey_date}</td>
+                    <td class="py-3 px-4 font-extrabold text-slate-900">₹${parseFloat(b.total_fare).toFixed(2)}</td>
+                    <td class="py-3 px-4">
+                        <span class="${b.booking_status === 'Confirmed' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'} text-[10px] font-bold px-2 py-0.5 rounded">
+                            ${b.booking_status}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 text-right">
+                        <button onclick='viewTicket(${JSON.stringify(b)})' class="text-blue-600 hover:text-blue-800 font-bold text-xs mr-2" title="Print Ticket">
+                            <i class="fa-solid fa-print"></i>
+                        </button>
+                        ${b.booking_status === 'Confirmed' ? `
+                            <button onclick="cancelTicketPrompt('${b.pnr_number}')" class="text-rose-500 hover:text-rose-700 font-bold text-xs" title="Cancel Ticket">
+                                <i class="fa-solid fa-ban"></i>
+                            </button>
+                        ` : ''}
+                    </td>
+                </tr>
+            `).join("");
+
+            // My Bookings Full Cards
+            myBookingsCont.innerHTML = userBookings.map(b => {
+                const passList = (b.passengers || []).map(p => `
+                    <div class="inline-flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700">
+                        <i class="fa-solid fa-user text-[10px] text-slate-400"></i>
+                        <span>${p.name} (${p.gender[0]}/${p.age})</span>
+                        <span class="text-blue-600 font-mono">[${p.seat_number || 'Confirmed'}]</span>
+                    </div>
+                `).join("") || `<span class="text-xs text-slate-400">Primary Seat Confirmed</span>`;
+
+                return `
+                    <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono text-base font-black text-blue-700">PNR: ${b.pnr_number}</span>
+                                    <span class="${b.booking_status === 'Confirmed' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'} text-xs font-extrabold px-2.5 py-0.5 rounded-full uppercase">
+                                        ${b.booking_status}
+                                    </span>
+                                </div>
+                                <h4 class="text-base font-extrabold text-slate-900 mt-1">${b.train_number} - ${b.train_name}</h4>
+                            </div>
+
+                            <div class="text-left sm:text-right">
+                                <span class="text-xs text-slate-400 block">Total Fare</span>
+                                <span class="text-xl font-black text-slate-900">₹${parseFloat(b.total_fare).toFixed(2)}</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 py-4 text-xs">
+                            <div>
+                                <span class="text-slate-400 block text-[10px] uppercase font-bold">Route</span>
+                                <strong class="text-slate-800">${b.source_name} (${b.source_code}) ➔ ${b.dest_name} (${b.dest_code})</strong>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block text-[10px] uppercase font-bold">Date of Travel</span>
+                                <strong class="text-slate-800">${b.journey_date}</strong>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 block text-[10px] uppercase font-bold">Booked On</span>
+                                <strong class="text-slate-800">${new Date(b.booking_date).toLocaleDateString()}</strong>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 pb-4">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Passengers & Berth</span>
+                            <div class="flex flex-wrap gap-2">
+                                ${passList}
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                            ${b.booking_status === 'Confirmed' ? `
+                                <button onclick="cancelTicketPrompt('${b.pnr_number}')" class="text-rose-600 hover:bg-rose-50 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-ban"></i> Cancel Booking
+                                </button>
+                            ` : ''}
+                            <button onclick='viewTicket(${JSON.stringify(b)})' class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
+                                <i class="fa-solid fa-print"></i> E-Ticket Slip
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        // CANCEL TICKET ACTION
+        async function cancelTicketPrompt(pnr) {
+            if (!confirm(`Are you sure you want to cancel booking for PNR ${pnr}? Refund will be processed as per DBMS rules.`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/cancel-ticket`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pnrNumber: pnr })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast(`PNR ${pnr} cancelled successfully!`, "fa-solid fa-circle-check");
+                    fetchUserBookings();
+                } else {
+                    alert(data.error || "Failed to cancel ticket.");
+                }
+            } catch (err) {
+                console.error("Cancel error:", err);
+                showToast("Server error during cancellation.", "fa-solid fa-triangle-exclamation");
+            }
+        }
+
+        // VIEW & PRINT E-TICKET
+        function viewTicket(b) {
+            document.getElementById("ticketPnr").textContent = b.pnr_number;
+            document.getElementById("ticketTrain").textContent = `${b.train_number} - ${b.train_name}`;
+            document.getElementById("ticketDate").textContent = b.journey_date;
+            document.getElementById("ticketStatus").textContent = b.booking_status;
+            document.getElementById("ticketFrom").textContent = `${b.source_name || 'MAS'} (${b.source_code || 'MAS'})`;
+            document.getElementById("ticketTo").textContent = `${b.dest_name || 'SBC'} (${b.dest_code || 'SBC'})`;
+            document.getElementById("ticketFare").textContent = `₹${parseFloat(b.total_fare).toFixed(2)}`;
+
+            const passTbody = document.getElementById("ticketPassengersBody");
+            if (b.passengers && b.passengers.length > 0) {
+                passTbody.innerHTML = b.passengers.map((p, i) => `
+                    <tr>
+                        <td class="p-2">${i+1}</td>
+                        <td class="p-2 font-bold">${p.name}</td>
+                        <td class="p-2">${p.age} / ${p.gender}</td>
+                        <td class="p-2 text-emerald-700 font-bold">${b.booking_status === 'Confirmed' ? 'CNF' : 'CAN'}</td>
+                        <td class="p-2 font-bold">${p.seat_number || 'C4-42'}</td>
+                    </tr>
+                `).join("");
+            } else {
+                passTbody.innerHTML = `
+                    <tr>
+                        <td class="p-2">1</td>
+                        <td class="p-2 font-bold">${currentUser.name || 'Passenger'}</td>
+                        <td class="p-2">24 / M</td>
+                        <td class="p-2 text-emerald-700 font-bold">CNF</td>
+                        <td class="p-2 font-bold">C4-42 (Window)</td>
+                    </tr>
+                `;
+            }
+
+            document.getElementById("printableTicketModal").classList.remove("hidden");
+        }
+
+        function printMockBookingTicket() {
+            if (userBookings.length > 0) {
+                viewTicket(userBookings[0]);
+            }
+        }
+
+        function closeTicketModal() {
+            document.getElementById("printableTicketModal").classList.add("hidden");
+        }
+
+        // QUICK BOOK FORM HANDLER
+        async function handleDashSearch(e) {
+            e.preventDefault();
+            const from = document.getElementById("dashFromStation").value;
+            const to = document.getElementById("dashToStation").value;
+            const date = document.getElementById("dashJourneyDate").value;
+
+            if (from === to) {
+                alert("Source and Destination station cannot be identical.");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/trains?from=${from}&to=${to}&date=${date}`);
+                const trains = await res.json();
+
+                const cont = document.getElementById("dashResultsContainer");
+                const list = document.getElementById("dashTrainsList");
+                const title = document.getElementById("dashResultsTitle");
+
+                cont.classList.remove("hidden");
+                title.textContent = `${from} ➔ ${to} Available Services (${trains.length} Trains)`;
+
+                list.innerHTML = trains.map(t => `
+                    <div class="border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50">
+                        <div>
+                            <span class="font-bold text-slate-900">${t.train_name} (#${t.train_number})</span>
+                            <div class="text-xs text-slate-500 mt-0.5">Dep: ${t.departure_time || '06:00 AM'} &bull; Arr: ${t.arrival_time || '10:30 AM'}</div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm font-extrabold text-blue-700">₹950.00</span>
+                            <button onclick="bookDirectFromDash(${t.train_number}, '${t.train_name}')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition">
+                                Quick Reserve
+                            </button>
+                        </div>
+                    </div>
+                `).join("");
+
+            } catch (err) {
+                console.error("Dash search error:", err);
+            }
+        }
+
+        async function bookDirectFromDash(trainNum, trainName) {
+            const date = document.getElementById("dashJourneyDate").value;
+            try {
+                const res = await fetch(`${API_URL}/book`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: currentUser.userId || 1,
+                        trainNumber: trainNum,
+                        journeyDate: date,
+                        classType: 'CC',
+                        totalFare: 950.00,
+                        passengers: [
+                            { name: currentUser.name || 'Passenger', age: 24, gender: 'Male' }
+                        ]
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast(`Ticket booked! PNR: ${data.pnr}`, "fa-solid fa-circle-check");
+                    fetchUserBookings();
+                    switchView('my-bookings');
+                }
+            } catch (err) {
+                console.error("Booking failed:", err);
+            }
+        }
+
+        // ==============================================
+        // ADMIN OPERATIONS (TRAINS, LOGS, MASTER BOOKINGS)
+        // ==============================================
+        async function loadAllTrains() {
+            try {
+                const res = await fetch(`${API_URL}/trains`);
+                allTrains = await res.json();
+
+                const tbody = document.getElementById("adminTrainsTableBody");
+                tbody.innerHTML = allTrains.map(t => `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-3 px-4 font-mono font-bold text-blue-700">${t.train_number}</td>
+                        <td class="py-3 px-4 font-bold text-slate-900">${t.train_name}</td>
+                        <td class="py-3 px-4">${t.source_name || t.source_code}</td>
+                        <td class="py-3 px-4">${t.dest_name || t.dest_code}</td>
+                        <td class="py-3 px-4 font-semibold">${t.total_coaches || 18} Coaches</td>
+                        <td class="py-3 px-4 text-right">
+                            <button onclick="deleteTrainPrompt(${t.train_number})" class="text-rose-500 hover:text-rose-700 font-bold" title="Delete Train">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join("");
+            } catch (err) {
+                console.error("Failed to fetch trains:", err);
+            }
+        }
+
+        async function loadAdminBookings() {
+            try {
+                const res = await fetch(`${API_URL}/admin/all-bookings`);
+                allAdminBookings = await res.json();
+
+                const tbody = document.getElementById("adminAllBookingsTableBody");
+                tbody.innerHTML = allAdminBookings.map(b => `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-3 px-4 font-mono font-bold text-blue-700">${b.pnr_number}</td>
+                        <td class="py-3 px-4">
+                            <strong class="text-slate-900 block">${b.booked_by}</strong>
+                            <span class="text-[10px] text-slate-400 font-mono">${b.user_email}</span>
+                        </td>
+                        <td class="py-3 px-4 font-semibold text-slate-800">${b.train_name}</td>
+                        <td class="py-3 px-4">${b.journey_date}</td>
+                        <td class="py-3 px-4 font-bold text-slate-900">₹${parseFloat(b.total_fare).toFixed(2)}</td>
+                        <td class="py-3 px-4">
+                            <span class="${b.booking_status === 'Confirmed' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'} text-[10px] font-bold px-2 py-0.5 rounded">
+                                ${b.booking_status}
+                            </span>
+                        </td>
+                    </tr>
+                `).join("");
+            } catch (err) {
+                console.error("Admin bookings load error:", err);
+            }
+        }
+
+        async function loadAdminLogs() {
+            try {
+                const res = await fetch(`${API_URL}/admin/logs`);
+                const logs = await res.json();
+
+                const cont = document.getElementById("adminLogsContainer");
+                cont.innerHTML = logs.map(l => `
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs font-mono">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-terminal text-blue-600"></i>
+                            <span class="text-slate-800">${l.log_message}</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400">${new Date(l.logged_at).toLocaleString()}</span>
+                    </div>
+                `).join("") || `<p class="text-xs text-slate-400">No logs recorded yet.</p>`;
+            } catch (err) {
+                console.error("Admin logs load error:", err);
+            }
+        }
+
+        async function loadAdminStats() {
+            try {
+                const res = await fetch(`${API_URL}/admin/stats`);
+                const stats = await res.json();
+                console.log("Admin metrics loaded:", stats);
+            } catch (err) {
+                console.error("Failed to load admin stats:", err);
+            }
+        }
+
+        // ADD TRAIN MODAL
+        function openAddTrainModal() {
+            document.getElementById("addTrainModal").classList.remove("hidden");
+        }
+
+        function closeAddTrainModal() {
+            document.getElementById("addTrainModal").classList.add("hidden");
+        }
+
+        async function handleCreateTrain(e) {
+            e.preventDefault();
+            const trainNumber = document.getElementById("newTrainNum").value;
+            const trainName = document.getElementById("newTrainName").value.trim();
+            const sourceStationId = document.getElementById("newTrainSource").value;
+            const destStationId = document.getElementById("newTrainDest").value;
+            const totalCoaches = document.getElementById("newTrainCoaches").value;
+
+            try {
+                const res = await fetch(`${API_URL}/admin/trains`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ trainNumber, trainName, sourceStationId, destStationId, totalCoaches })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast("New train added to database!", "fa-solid fa-train");
+                    closeAddTrainModal();
+                    loadAllTrains();
+                } else {
+                    alert(data.error || "Failed to add train.");
+                }
+            } catch (err) {
+                console.error("Add train error:", err);
+            }
+        }
+
+        async function deleteTrainPrompt(trainNumber) {
+            if (!confirm(`Are you sure you want to delete train #${trainNumber}? This will trigger cascade integrity rules in MySQL.`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/admin/trains/${trainNumber}`, {
+                    method: 'DELETE'
+                });
+                if (res.ok) {
+                    showToast(`Train #${trainNumber} deleted!`, "fa-solid fa-trash-can");
+                    loadAllTrains();
+                }
+            } catch (err) {
+                console.error("Delete train error:", err);
+            }
+        }
+
+        // TOAST NOTIFIER HELPER
+        function showToast(msg, iconClass) {
+            const toast = document.getElementById("toast");
+            const toastMsg = document.getElementById("toastMsg");
+            const toastIcon = document.getElementById("toastIcon");
+
+            toastMsg.textContent = msg;
+            if (iconClass) toastIcon.className = iconClass + " text-emerald-400 text-base";
+
+            toast.classList.remove("translate-y-[-100px]", "opacity-0");
+            toast.classList.add("translate-y-0", "opacity-100");
+
+            setTimeout(() => {
+                toast.classList.add("translate-y-[-100px]", "opacity-0");
+                toast.classList.remove("translate-y-0", "opacity-100");
+            }, 3000);
+        }
+
+        function toggleSidebarMobile() {
+            const sb = document.getElementById("sidebar");
+            sb.classList.toggle("hidden");
+        }
+
+        function logoutDashboard() {
+            localStorage.removeItem("railway_user");
+            window.location.href = "/";
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1888 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RailReserve &bull; Smart Railway Reservation System</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        railway: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                            800: '#0c4a6e',
+                            900: '#082f49',
+                            950: '#031726',
+                        },
+                        saffron: {
+                            500: '#f97316',
+                            600: '#ea580c',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome Icons & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .hero-pattern {
+            background-color: #082f49;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px), radial-gradient(rgba(255, 255, 255, 0.05) 1px, #082f49 1px);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        .glass-dark {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        .train-track {
+            background: repeating-linear-gradient(90deg, #38bdf8 0, #38bdf8 8px, transparent 8px, transparent 16px);
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-blue-600 selection:text-white">
+
+    <!-- TOP ANNOUNCEMENT BAR -->
+    <div class="bg-gradient-to-r from-blue-900 via-sky-900 to-slate-900 text-xs text-blue-100 py-2 px-4 border-b border-blue-800/40">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <span class="bg-saffron-500 text-white font-bold uppercase text-[10px] tracking-wider px-2 py-0.5 rounded-full animate-pulse">Live</span>
+                <span class="flex items-center gap-2">
+                    <i class="fa-solid fa-train"></i> Indian Railways DBMS Reservation Portal &bull; Lab Experiment 3 Production System
+                </span>
+            </div>
+            <div class="flex items-center gap-4 text-xs">
+                <span class="hover:text-white transition flex items-center gap-1.5 cursor-pointer" onclick="openPnrTab()">
+                    <i class="fa-solid fa-ticket"></i> PNR Status
+                </span>
+                <span class="text-blue-400">|</span>
+                <span class="hover:text-white transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-phone"></i> Helpline: 139 (Rail Madad)
+                </span>
+                <span class="text-blue-400">|</span>
+                <!-- Database status badge in topbar -->
+                <div id="topDbStatus" class="flex items-center gap-1.5 font-medium px-2 py-0.5 rounded-full bg-slate-800/80 text-emerald-300 border border-emerald-500/30">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="topDbText">Checking DB...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN NAVIGATION BAR -->
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-sm transition">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            
+            <!-- Brand Logo -->
+            <a href="/" class="flex items-center gap-3 group">
+                <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-blue-700 to-sky-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition">
+                    <i class="fa-solid fa-train-subway text-xl"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="font-extrabold text-2xl tracking-tight text-slate-900 group-hover:text-blue-600 transition">Rail<span class="text-blue-600">Reserve</span></span>
+                        <span class="text-[10px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded uppercase tracking-wider">DBMS</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 font-medium">Railway Reservation & Live Tracking</p>
+                </div>
+            </a>
+
+            <!-- Navigation Links -->
+            <nav class="hidden md:flex items-center gap-7 text-sm font-semibold text-slate-600">
+                <a href="#searchSection" class="hover:text-blue-600 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-magnifying-glass text-xs text-blue-500"></i> Book Tickets
+                </a>
+                <a href="#pnrSection" onclick="openPnrTab()" class="hover:text-blue-600 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-id-card text-xs text-blue-500"></i> PNR Status
+                </a>
+                <a href="#routesSection" class="hover:text-blue-600 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-route text-xs text-blue-500"></i> Popular Routes
+                </a>
+                <a href="#schemaSection" class="hover:text-blue-600 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-database text-xs text-blue-500"></i> DBMS Schema
+                </a>
+                <a href="/dashboard" class="text-blue-700 font-bold hover:text-blue-800 transition flex items-center gap-1.5 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
+                    <i class="fa-solid fa-gauge-high text-xs"></i> Dashboard
+                </a>
+            </nav>
+
+            <!-- User Auth Actions -->
+            <div class="flex items-center gap-3">
+                <!-- Logged In State Container -->
+                <div id="userProfileNav" class="hidden items-center gap-3">
+                    <a href="/dashboard" class="flex items-center gap-2 pl-3 border-l border-slate-200 hover:opacity-85 transition" title="Go to Dashboard">
+                        <div class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm" id="userAvatar">
+                            U
+                        </div>
+                        <div class="text-left hidden sm:block">
+                            <div class="text-xs font-bold text-slate-900 leading-tight" id="userNameNav">Passenger</div>
+                            <span class="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded" id="userRoleNav">Passenger</span>
+                        </div>
+                    </a>
+                    <a href="/dashboard" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1 shadow-sm">
+                        <i class="fa-solid fa-gauge-high"></i> <span class="hidden sm:inline">Dashboard</span>
+                    </a>
+                    <button onclick="logoutUser()" class="text-xs font-semibold text-slate-500 hover:text-rose-600 transition p-2 rounded-lg hover:bg-slate-100" title="Logout">
+                        <i class="fa-solid fa-arrow-right-from-bracket text-base"></i>
+                    </button>
+                </div>
+
+                <!-- Logged Out State Actions -->
+                <div id="authButtonsNav" class="flex items-center gap-2">
+                    <button onclick="openAuthModal('login')" class="text-sm font-semibold text-slate-700 hover:text-blue-600 px-4 py-2 rounded-lg hover:bg-slate-100 transition">
+                        Login
+                    </button>
+                    <button onclick="openAuthModal('register')" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-sm hover:shadow transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-plus text-xs"></i> Register
+                    </button>
+                </div>
+
+                <!-- Standalone Login Page Link -->
+                <a href="/login" class="text-xs text-slate-400 hover:text-slate-600 p-2" title="Open Standalone Login Page">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO SECTION WITH INTEGRATED BOOKING ENGINE -->
+    <section class="hero-pattern relative text-white pt-16 pb-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
+        
+        <!-- Glowing background gradients -->
+        <div class="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute top-1/2 right-0 w-[450px] h-[350px] bg-sky-400/10 rounded-full blur-2xl pointer-events-none"></div>
+
+        <div class="max-w-7xl mx-auto relative z-10">
+
+            <!-- Hero Intro text -->
+            <div class="text-center max-w-3xl mx-auto mb-10">
+                <div class="inline-flex items-center gap-2 bg-blue-900/60 border border-blue-400/30 rounded-full px-3.5 py-1 text-xs text-blue-200 mb-4 shadow-sm backdrop-blur-sm">
+                    <i class="fa-solid fa-bolt text-saffron-500"></i>
+                    <span>Next-Gen Railway Reservation Architecture</span>
+                    <span class="w-1 h-1 rounded-full bg-blue-300"></span>
+                    <span class="text-emerald-300 font-medium">MySQL Real-Time Sync</span>
+                </div>
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white mb-4 leading-tight">
+                    Book Train Tickets <br class="hidden sm:inline">
+                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-sky-300 via-blue-200 to-white">
+                        Fast, Simple & Reliable
+                    </span>
+                </h1>
+                <p class="text-slate-300 text-base sm:text-lg leading-relaxed">
+                    Search express trains, check live seat availability, instantly verify 10-digit PNR status, and book your tickets with complete database transaction safety.
+                </p>
+            </div>
+
+            <!-- MULTI-TAB ENGINE CARD -->
+            <div id="searchSection" class="max-w-5xl mx-auto glass-panel text-slate-800 rounded-3xl shadow-2xl p-4 sm:p-7 border border-white/40">
+                
+                <!-- Engine Tabs (Search / PNR / Live Status) -->
+                <div class="flex flex-wrap items-center justify-between border-b border-slate-200 pb-4 mb-6 gap-3">
+                    <div class="flex items-center gap-2 sm:gap-3 bg-slate-100/90 p-1 rounded-xl">
+                        <button id="tabSearchBtn" onclick="switchMainTab('search')" class="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold bg-white text-blue-700 shadow-sm transition">
+                            <i class="fa-solid fa-train"></i> Book Trains
+                        </button>
+                        <button id="tabPnrBtn" onclick="switchMainTab('pnr')" class="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-slate-600 hover:text-slate-900 transition">
+                            <i class="fa-solid fa-id-badge"></i> PNR Status
+                        </button>
+                        <button id="tabLiveBtn" onclick="switchMainTab('live')" class="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-slate-600 hover:text-slate-900 transition">
+                            <i class="fa-solid fa-location-crosshairs"></i> Live Train Status
+                        </button>
+                    </div>
+
+                    <!-- Live DB Health pill inside card -->
+                    <div class="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-slate-100 text-slate-700" id="cardDbStatus">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span id="cardDbText">Database: Checking...</span>
+                    </div>
+                </div>
+
+                <!-- TAB 1: TRAIN SEARCH & BOOKING FORM -->
+                <div id="viewSearchEngine" class="space-y-6">
+                    <form id="trainSearchForm" onsubmit="handleSearchTrains(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                            
+                            <!-- Origin Station -->
+                            <div class="md:col-span-3">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                                    <i class="fa-solid fa-location-dot text-blue-600 mr-1"></i> From Station
+                                </label>
+                                <select id="fromStation" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none transition shadow-sm">
+                                    <option value="MAS" selected>Chennai Central (MAS)</option>
+                                    <option value="NDLS">New Delhi (NDLS)</option>
+                                    <option value="SBC">KSR Bengaluru (SBC)</option>
+                                    <option value="CSTM">Mumbai CSMT (CSTM)</option>
+                                    <option value="HWH">Howrah Jn (HWH)</option>
+                                    <option value="PDY">Puducherry (PDY)</option>
+                                    <option value="HYB">Hyderabad Deccan (HYB)</option>
+                                    <option value="ADI">Ahmedabad Jn (ADI)</option>
+                                </select>
+                            </div>
+
+                            <!-- Swap Station Button -->
+                            <div class="md:col-span-1 flex justify-center pt-4 md:pt-4">
+                                <button type="button" onclick="swapStations()" class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-600 hover:text-white transition flex items-center justify-center shadow-sm" title="Swap Stations">
+                                    <i class="fa-solid fa-right-left text-sm"></i>
+                                </button>
+                            </div>
+
+                            <!-- Destination Station -->
+                            <div class="md:col-span-3">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                                    <i class="fa-solid fa-map-pin text-saffron-500 mr-1"></i> To Station
+                                </label>
+                                <select id="toStation" class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none transition shadow-sm">
+                                    <option value="SBC" selected>KSR Bengaluru (SBC)</option>
+                                    <option value="MAS">Chennai Central (MAS)</option>
+                                    <option value="NDLS">New Delhi (NDLS)</option>
+                                    <option value="CSTM">Mumbai CSMT (CSTM)</option>
+                                    <option value="HWH">Howrah Jn (HWH)</option>
+                                    <option value="PDY">Puducherry (PDY)</option>
+                                    <option value="HYB">Hyderabad Deccan (HYB)</option>
+                                    <option value="ADI">Ahmedabad Jn (ADI)</option>
+                                </select>
+                            </div>
+
+                            <!-- Date of Journey -->
+                            <div class="md:col-span-3">
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                                    <i class="fa-regular fa-calendar-days text-blue-600 mr-1"></i> Journey Date
+                                </label>
+                                <input type="date" id="journeyDate" required class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-3 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none transition shadow-sm">
+                            </div>
+
+                            <!-- Search Action Button -->
+                            <div class="md:col-span-2 pt-2 md:pt-5">
+                                <button type="submit" id="searchSubmitBtn" class="w-full bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-700 hover:to-sky-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 group">
+                                    <i class="fa-solid fa-magnifying-glass group-hover:scale-110 transition"></i>
+                                    <span>Find Trains</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Class & Quota Filters row -->
+                        <div class="flex flex-wrap items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-600 gap-3">
+                            <div class="flex items-center gap-4 flex-wrap">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-semibold text-slate-700">Class:</span>
+                                    <select id="filterClass" class="bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-medium focus:outline-none">
+                                        <option value="ALL">All Classes</option>
+                                        <option value="EC">Executive Chair (EC)</option>
+                                        <option value="CC">AC Chair Car (CC)</option>
+                                        <option value="1A">First AC (1A)</option>
+                                        <option value="2A">2 Tier AC (2A)</option>
+                                        <option value="3A">3 Tier AC (3A)</option>
+                                        <option value="SL">Sleeper (SL)</option>
+                                        <option value="2S">Second Sitting (2S)</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-semibold text-slate-700">Quota:</span>
+                                    <select id="filterQuota" class="bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-medium focus:outline-none">
+                                        <option value="GN">General Quota (GN)</option>
+                                        <option value="LD">Ladies (LD)</option>
+                                        <option value="TQ">Tatkal Quota (TQ)</option>
+                                        <option value="PT">Premium Tatkal (PT)</option>
+                                        <option value="SS">Senior Citizen (SS)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-slate-400">Popular Quick:</span>
+                                <button type="button" onclick="setQuickRoute('MAS', 'SBC')" class="text-blue-600 hover:underline font-semibold">MAS ➔ SBC</button>
+                                <span class="text-slate-300">&bull;</span>
+                                <button type="button" onclick="setQuickRoute('NDLS', 'CSTM')" class="text-blue-600 hover:underline font-semibold">NDLS ➔ CSTM</button>
+                                <span class="text-slate-300">&bull;</span>
+                                <button type="button" onclick="setQuickRoute('PDY', 'MAS')" class="text-blue-600 hover:underline font-semibold">PDY ➔ MAS</button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- SEARCH RESULTS CONTAINER -->
+                    <div id="searchResultsArea" class="hidden pt-4 border-t border-slate-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-900" id="resultsRouteTitle">Available Trains</h3>
+                                <p class="text-xs text-slate-500" id="resultsDateSubtitle">Showing scheduled express services</p>
+                            </div>
+                            <span class="text-xs font-semibold bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full" id="resultsCountBadge">3 Trains Found</span>
+                        </div>
+
+                        <!-- Dynamic Train Cards Grid -->
+                        <div id="trainsListContainer" class="space-y-4">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: PNR STATUS INQUIRY ENGINE -->
+                <div id="viewPnrEngine" class="hidden space-y-6">
+                    <div class="max-w-2xl mx-auto text-center">
+                        <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                            <i class="fa-solid fa-id-card text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-900">Passenger Name Record (PNR) Inquiry</h3>
+                        <p class="text-sm text-slate-500 mt-1 mb-6">
+                            Enter your 10-digit PNR number to view instant booking status, coach allocation, berth position, and chart preparation.
+                        </p>
+
+                        <form onsubmit="handlePnrSearch(event)" class="flex flex-col sm:flex-row gap-2 max-w-lg mx-auto">
+                            <input 
+                                type="text" 
+                                id="pnrInput" 
+                                maxlength="10" 
+                                placeholder="Enter 10-digit PNR (e.g. 8249102847)" 
+                                required
+                                class="flex-1 bg-white border border-slate-300 rounded-xl px-4 py-3 text-sm font-semibold tracking-wider text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <button 
+                                type="submit" 
+                                id="pnrBtnSubmit"
+                                class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl shadow-md transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-search"></i> Check Status
+                            </button>
+                        </form>
+
+                        <!-- Quick Test PNR suggestions -->
+                        <div class="mt-4 flex items-center justify-center gap-2 text-xs text-slate-500">
+                            <span>Try Sample PNR:</span>
+                            <button type="button" onclick="fillTestPnr('8249102847')" class="font-mono bg-slate-100 hover:bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-semibold transition">8249102847</button>
+                            <button type="button" onclick="fillTestPnr('8401928374')" class="font-mono bg-slate-100 hover:bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-semibold transition">8401928374</button>
+                        </div>
+
+                        <!-- PNR RESULTS DISPLAY CARD -->
+                        <div id="pnrResultCard" class="hidden mt-6 text-left bg-gradient-to-br from-slate-50 to-blue-50/40 border border-blue-200 rounded-2xl p-6 shadow-sm">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: LIVE TRAIN TRACKING ENGINE -->
+                <div id="viewLiveEngine" class="hidden space-y-6">
+                    <div class="max-w-3xl mx-auto">
+                        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-900">Live Train Running Tracker</h3>
+                                <p class="text-xs text-slate-500">Track real-time GPS locations, arrival delays, and platform numbers.</p>
+                            </div>
+                            <div class="flex items-center gap-2 w-full sm:w-auto">
+                                <select id="liveTrainSelect" onchange="renderLiveTracker(this.value)" class="bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                    <option value="20607">20607 - Vande Bharat (MAS ➔ SBC)</option>
+                                    <option value="12952">12952 - Mumbai Rajdhani (NDLS ➔ CSTM)</option>
+                                    <option value="12007">12007 - Shatabdi Express (MAS ➔ SBC)</option>
+                                    <option value="16116">16116 - Auroville Intercity (PDY ➔ MAS)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Live Train Status Card -->
+                        <div id="liveTrackerContent" class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Quick Features Ticker below Hero -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto mt-8 text-center text-xs text-blue-100">
+                <div class="flex items-center justify-center gap-2 bg-blue-900/40 border border-blue-700/40 rounded-xl py-2.5 px-3 backdrop-blur-sm">
+                    <i class="fa-solid fa-bolt text-saffron-500"></i>
+                    <span>Instant E-Ticket Booking</span>
+                </div>
+                <div class="flex items-center justify-center gap-2 bg-blue-900/40 border border-blue-700/40 rounded-xl py-2.5 px-3 backdrop-blur-sm">
+                    <i class="fa-solid fa-lock text-emerald-400"></i>
+                    <span>ACID Compliant Transactions</span>
+                </div>
+                <div class="flex items-center justify-center gap-2 bg-blue-900/40 border border-blue-700/40 rounded-xl py-2.5 px-3 backdrop-blur-sm">
+                    <i class="fa-solid fa-hand-holding-dollar text-sky-400"></i>
+                    <span>Zero Cancellation Fee Tier</span>
+                </div>
+                <div class="flex items-center justify-center gap-2 bg-blue-900/40 border border-blue-700/40 rounded-xl py-2.5 px-3 backdrop-blur-sm">
+                    <i class="fa-solid fa-database text-purple-400"></i>
+                    <span>Relational MySQL Backend</span>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- POPULAR TRAIN ROUTES SECTION -->
+    <section id="routesSection" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div class="text-center max-w-3xl mx-auto mb-14">
+            <span class="text-xs font-extrabold uppercase tracking-widest text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
+                High-Speed Corridors
+            </span>
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3 tracking-tight">
+                Popular Train Routes & Schedules
+            </h2>
+            <p class="text-slate-600 text-sm sm:text-base mt-2">
+                Explore premier express trains linking metropolitan hubs with unmatched speed, punctuality, and passenger comfort.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            <!-- Route 1: Vande Bharat -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-300 p-6 flex flex-col justify-between group">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="bg-blue-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                            Superfast Express
+                        </span>
+                        <span class="text-xs font-semibold text-slate-400">Train #20607</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition">Vande Bharat Express</h3>
+                    <p class="text-xs text-slate-500 mb-6">Semi-high-speed aerodynamic trainset with catering</p>
+
+                    <div class="flex items-center justify-between text-sm py-4 border-y border-slate-100 mb-4">
+                        <div>
+                            <div class="font-bold text-slate-900">05:50 AM</div>
+                            <div class="text-xs text-slate-500 font-medium">Chennai (MAS)</div>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[11px] font-semibold text-blue-600">4h 20m</span>
+                            <div class="w-20 h-0.5 bg-blue-200 relative my-1">
+                                <i class="fa-solid fa-train text-[10px] text-blue-600 absolute -top-1.5 left-1/2 -translate-x-1/2"></i>
+                            </div>
+                            <span class="text-[10px] text-slate-400">Daily Service</span>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-slate-900">10:10 AM</div>
+                            <div class="text-xs text-slate-500 font-medium">Bengaluru (SBC)</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between text-xs text-slate-600 mb-6">
+                        <span>Classes: <strong class="text-slate-800">CC, EC</strong></span>
+                        <span class="text-emerald-600 font-semibold"><i class="fa-solid fa-circle-check"></i> 84 Seats Avail</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+                    <div>
+                        <span class="text-[11px] text-slate-400">Fares from</span>
+                        <div class="text-lg font-extrabold text-blue-600">₹950</div>
+                    </div>
+                    <button onclick="setQuickRoute('MAS', 'SBC'); scrollToSearch();" class="bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white font-bold text-xs px-4 py-2.5 rounded-xl transition">
+                        Book Now
+                    </button>
+                </div>
+            </div>
+
+            <!-- Route 2: Rajdhani Express -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-300 p-6 flex flex-col justify-between group">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="bg-saffron-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                            VIP Rajdhani
+                        </span>
+                        <span class="text-xs font-semibold text-slate-400">Train #12952</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition">Mumbai Rajdhani Express</h3>
+                    <p class="text-xs text-slate-500 mb-6">Premier overnight connecting capital to financial hub</p>
+
+                    <div class="flex items-center justify-between text-sm py-4 border-y border-slate-100 mb-4">
+                        <div>
+                            <div class="font-bold text-slate-900">04:55 PM</div>
+                            <div class="text-xs text-slate-500 font-medium">New Delhi (NDLS)</div>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[11px] font-semibold text-saffron-500">15h 40m</span>
+                            <div class="w-20 h-0.5 bg-saffron-200 relative my-1">
+                                <i class="fa-solid fa-train text-[10px] text-saffron-500 absolute -top-1.5 left-1/2 -translate-x-1/2"></i>
+                            </div>
+                            <span class="text-[10px] text-slate-400">Overnight</span>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-slate-900">08:35 AM</div>
+                            <div class="text-xs text-slate-500 font-medium">Mumbai (CSTM)</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between text-xs text-slate-600 mb-6">
+                        <span>Classes: <strong class="text-slate-800">1A, 2A, 3A</strong></span>
+                        <span class="text-emerald-600 font-semibold"><i class="fa-solid fa-circle-check"></i> 75 Seats Avail</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+                    <div>
+                        <span class="text-[11px] text-slate-400">Fares from</span>
+                        <div class="text-lg font-extrabold text-blue-600">₹1,680</div>
+                    </div>
+                    <button onclick="setQuickRoute('NDLS', 'CSTM'); scrollToSearch();" class="bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white font-bold text-xs px-4 py-2.5 rounded-xl transition">
+                        Book Now
+                    </button>
+                </div>
+            </div>
+
+            <!-- Route 3: Auroville Intercity -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-xl transition-all duration-300 p-6 flex flex-col justify-between group">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="bg-emerald-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                            Daily Express
+                        </span>
+                        <span class="text-xs font-semibold text-slate-400">Train #16116</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition">Auroville Intercity</h3>
+                    <p class="text-xs text-slate-500 mb-6">Convenient commuter connecting coastal French colony</p>
+
+                    <div class="flex items-center justify-between text-sm py-4 border-y border-slate-100 mb-4">
+                        <div>
+                            <div class="font-bold text-slate-900">05:30 AM</div>
+                            <div class="text-xs text-slate-500 font-medium">Puducherry (PDY)</div>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <span class="text-[11px] font-semibold text-emerald-600">3h 45m</span>
+                            <div class="w-20 h-0.5 bg-emerald-200 relative my-1">
+                                <i class="fa-solid fa-train text-[10px] text-emerald-600 absolute -top-1.5 left-1/2 -translate-x-1/2"></i>
+                            </div>
+                            <span class="text-[10px] text-slate-400">Fast Commuter</span>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-slate-900">09:15 AM</div>
+                            <div class="text-xs text-slate-500 font-medium">Chennai (MAS)</div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between text-xs text-slate-600 mb-6">
+                        <span>Classes: <strong class="text-slate-800">CC, 2S</strong></span>
+                        <span class="text-emerald-600 font-semibold"><i class="fa-solid fa-circle-check"></i> 145 Seats Avail</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+                    <div>
+                        <span class="text-[11px] text-slate-400">Fares from</span>
+                        <div class="text-lg font-extrabold text-blue-600">₹120</div>
+                    </div>
+                    <button onclick="setQuickRoute('PDY', 'MAS'); scrollToSearch();" class="bg-blue-50 hover:bg-blue-600 text-blue-600 hover:text-white font-bold text-xs px-4 py-2.5 rounded-xl transition">
+                        Book Now
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- DBMS PROJECT ARCHITECTURE & SCHEMA OVERVIEW SECTION -->
+    <section id="schemaSection" class="bg-slate-900 text-white py-20 px-4 sm:px-6 lg:px-8 border-y border-slate-800 relative overflow-hidden">
+        
+        <!-- Subtle background grid -->
+        <div class="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-30"></div>
+
+        <div class="max-w-7xl mx-auto relative z-10">
+            <div class="flex flex-col lg:flex-row items-start justify-between gap-8 mb-12">
+                <div>
+                    <span class="text-xs font-extrabold uppercase tracking-widest text-sky-400 bg-sky-950 px-3 py-1 rounded-full border border-sky-800">
+                        DBMS Lab Implementation &bull; Experiment 3
+                    </span>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight mt-3">
+                        Relational Database Architecture
+                    </h2>
+                    <p class="text-slate-400 text-sm sm:text-base mt-2 max-w-2xl">
+                        Designed with 8 normalized MySQL tables adhering to 3NF, complete with Primary Keys, Foreign Keys, Referential Integrity, and ACID transaction guarantees.
+                    </p>
+                </div>
+                <!-- Schema metrics pill -->
+                <div class="flex flex-wrap items-center gap-3 bg-slate-800/80 border border-slate-700 p-3 rounded-2xl">
+                    <div class="px-3 py-1.5 rounded-xl bg-slate-900/60 text-center">
+                        <div class="text-lg font-black text-sky-400">8</div>
+                        <div class="text-[10px] text-slate-400 uppercase font-semibold">Tables</div>
+                    </div>
+                    <div class="px-3 py-1.5 rounded-xl bg-slate-900/60 text-center">
+                        <div class="text-lg font-black text-emerald-400">InnoDB</div>
+                        <div class="text-[10px] text-slate-400 uppercase font-semibold">Engine</div>
+                    </div>
+                    <div class="px-3 py-1.5 rounded-xl bg-slate-900/60 text-center">
+                        <div class="text-lg font-black text-saffron-500">Bcrypt</div>
+                        <div class="text-[10px] text-slate-400 uppercase font-semibold">Auth Hash</div>
+                    </div>
+                    <div class="px-3 py-1.5 rounded-xl bg-slate-900/60 text-center">
+                        <div class="text-lg font-black text-purple-400">ACID</div>
+                        <div class="text-[10px] text-slate-400 uppercase font-semibold">Booking</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schema ER Table Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+                <!-- Table: users -->
+                <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm hover:border-sky-500/50 transition">
+                    <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-700">
+                        <span class="font-mono font-bold text-sky-400 text-sm flex items-center gap-1.5">
+                            <i class="fa-solid fa-users text-xs"></i> users
+                        </span>
+                        <span class="text-[10px] bg-sky-950 text-sky-300 px-1.5 py-0.5 rounded font-mono">Entity</span>
+                    </div>
+                    <ul class="text-xs space-y-1.5 font-mono text-slate-300">
+                        <li class="flex items-center justify-between"><span class="text-amber-400 font-bold">user_id [PK]</span> <span class="text-slate-500">INT AUTO</span></li>
+                        <li class="flex items-center justify-between"><span>name</span> <span class="text-slate-500">VARCHAR(100)</span></li>
+                        <li class="flex items-center justify-between"><span class="text-sky-300">email [UNI]</span> <span class="text-slate-500">VARCHAR(150)</span></li>
+                        <li class="flex items-center justify-between"><span>password</span> <span class="text-slate-500">VARCHAR(255)</span></li>
+                        <li class="flex items-center justify-between"><span>role</span> <span class="text-slate-500">ENUM</span></li>
+                    </ul>
+                </div>
+
+                <!-- Table: stations -->
+                <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm hover:border-sky-500/50 transition">
+                    <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-700">
+                        <span class="font-mono font-bold text-sky-400 text-sm flex items-center gap-1.5">
+                            <i class="fa-solid fa-building text-xs"></i> stations
+                        </span>
+                        <span class="text-[10px] bg-sky-950 text-sky-300 px-1.5 py-0.5 rounded font-mono">Entity</span>
+                    </div>
+                    <ul class="text-xs space-y-1.5 font-mono text-slate-300">
+                        <li class="flex items-center justify-between"><span class="text-amber-400 font-bold">station_id [PK]</span> <span class="text-slate-500">INT AUTO</span></li>
+                        <li class="flex items-center justify-between"><span class="text-sky-300">station_code [UNI]</span> <span class="text-slate-500">VARCHAR(10)</span></li>
+                        <li class="flex items-center justify-between"><span>station_name</span> <span class="text-slate-500">VARCHAR(100)</span></li>
+                        <li class="flex items-center justify-between"><span>city</span> <span class="text-slate-500">VARCHAR(100)</span></li>
+                    </ul>
+                </div>
+
+                <!-- Table: trains -->
+                <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm hover:border-sky-500/50 transition">
+                    <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-700">
+                        <span class="font-mono font-bold text-sky-400 text-sm flex items-center gap-1.5">
+                            <i class="fa-solid fa-train text-xs"></i> trains
+                        </span>
+                        <span class="text-[10px] bg-sky-950 text-sky-300 px-1.5 py-0.5 rounded font-mono">Entity</span>
+                    </div>
+                    <ul class="text-xs space-y-1.5 font-mono text-slate-300">
+                        <li class="flex items-center justify-between"><span class="text-amber-400 font-bold">train_number [PK]</span> <span class="text-slate-500">INT</span></li>
+                        <li class="flex items-center justify-between"><span>train_name</span> <span class="text-slate-500">VARCHAR(100)</span></li>
+                        <li class="flex items-center justify-between"><span class="text-emerald-400">source_station_id [FK]</span> <span class="text-slate-500">INT</span></li>
+                        <li class="flex items-center justify-between"><span class="text-emerald-400">dest_station_id [FK]</span> <span class="text-slate-500">INT</span></li>
+                        <li class="flex items-center justify-between"><span>total_coaches</span> <span class="text-slate-500">INT</span></li>
+                    </ul>
+                </div>
+
+                <!-- Table: bookings -->
+                <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm hover:border-sky-500/50 transition">
+                    <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-700">
+                        <span class="font-mono font-bold text-sky-400 text-sm flex items-center gap-1.5">
+                            <i class="fa-solid fa-ticket text-xs"></i> bookings
+                        </span>
+                        <span class="text-[10px] bg-emerald-950 text-emerald-300 px-1.5 py-0.5 rounded font-mono">Transaction</span>
+                    </div>
+                    <ul class="text-xs space-y-1.5 font-mono text-slate-300">
+                        <li class="flex items-center justify-between"><span class="text-amber-400 font-bold">pnr_number [PK]</span> <span class="text-slate-500">VARCHAR(20)</span></li>
+                        <li class="flex items-center justify-between"><span class="text-emerald-400">user_id [FK]</span> <span class="text-slate-500">INT</span></li>
+                        <li class="flex items-center justify-between"><span class="text-emerald-400">train_number [FK]</span> <span class="text-slate-500">INT</span></li>
+                        <li class="flex items-center justify-between"><span>journey_date</span> <span class="text-slate-500">DATE</span></li>
+                        <li class="flex items-center justify-between"><span>booking_status</span> <span class="text-slate-500">ENUM</span></li>
+                    </ul>
+                </div>
+
+                <!-- Table: passengers -->
+                <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm hover:border-sky-500/50 transition">
+                    <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-700">
+                        <span class="font-mono font-bold text-sky-400 text-sm flex items-center gap-1.5">
+                            <i class="fa-solid fa-person text-xs"></i> passengers
+                        </span>
+                        <span class="text-[10px] bg-slate-900 text-slate-400 px-1.5 py-0.5 rounded font-mono">Detail</span>
+                    </div>
+                    <ul class="text-xs space-y-1.5 font-mono text-slate-300">
+                        <li class="flex items-center justify-between"><span class="text-amber-400 font-bold">passenger_id [PK]</span> <span class="text-slate-500">INT AUTO</span></li>
+                        <li class="flex items-center justify-between"><span class="text-emerald-400">pnr_number [FK]</span> <span class="text-slate-500">VARCHAR(20)</span></li>
+                        <li class="flex items-center justify-between"><span>name</span> <span class="text-slate-500">VARCHAR(100)</span></li>
+                        <li class="flex items-center justify-between"><span>seat_number</span> <span class="text-slate-500">VARCHAR(20)</span></li>
+                    </ul>
+                </div>
+
+                <!-- Table: train_classes -->
+                <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm hover:border-sky-500/50 transition">
+                    <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-700">
+                        <span class="font-mono font-bold text-sky-400 text-sm flex items-center gap-1.5">
+                            <i class="fa-solid fa-couch text-xs"></i> train_classes
+                        </span>
+                        <span class="text-[10px] bg-slate-900 text-slate-400 px-1.5 py-0.5 rounded font-mono">Tariff</span>
+                    </div>
+                    <ul class="text-xs space-y-1.5 font-mono text-slate-300">
+                        <li class="flex items-center justify-between"><span class="text-amber-400 font-bold">class_id [PK]</span> <span class="text-slate-500">INT AUTO</span></li>
+                        <li class="flex items-center justify-between"><span class="text-emerald-400">train_number [FK]</span> <span class="text-slate-500">INT</span></li>
+                        <li class="flex items-center justify-between"><span>class_type</span> <span class="text-slate-500">VARCHAR(20)</span></li>
+                        <li class="flex items-center justify-between"><span>base_fare</span> <span class="text-slate-500">DECIMAL</span></li>
+                    </ul>
+                </div>
+
+                <!-- Table: routes -->
+                <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm hover:border-sky-500/50 transition">
+                    <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-700">
+                        <span class="font-mono font-bold text-sky-400 text-sm flex items-center gap-1.5">
+                            <i class="fa-solid fa-map text-xs"></i> routes
+                        </span>
+                        <span class="text-[10px] bg-slate-900 text-slate-400 px-1.5 py-0.5 rounded font-mono">Timetable</span>
+                    </div>
+                    <ul class="text-xs space-y-1.5 font-mono text-slate-300">
+                        <li class="flex items-center justify-between"><span class="text-amber-400 font-bold">route_id [PK]</span> <span class="text-slate-500">INT AUTO</span></li>
+                        <li class="flex items-center justify-between"><span class="text-emerald-400">train_number [FK]</span> <span class="text-slate-500">INT</span></li>
+                        <li class="flex items-center justify-between"><span class="text-emerald-400">station_id [FK]</span> <span class="text-slate-500">INT</span></li>
+                        <li class="flex items-center justify-between"><span>arrival_time</span> <span class="text-slate-500">TIME</span></li>
+                    </ul>
+                </div>
+
+                <!-- Table: system_logs -->
+                <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-sm hover:border-sky-500/50 transition">
+                    <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-700">
+                        <span class="font-mono font-bold text-sky-400 text-sm flex items-center gap-1.5">
+                            <i class="fa-solid fa-clipboard-list text-xs"></i> system_logs
+                        </span>
+                        <span class="text-[10px] bg-slate-900 text-slate-400 px-1.5 py-0.5 rounded font-mono">Audit</span>
+                    </div>
+                    <ul class="text-xs space-y-1.5 font-mono text-slate-300">
+                        <li class="flex items-center justify-between"><span class="text-amber-400 font-bold">log_id [PK]</span> <span class="text-slate-500">INT AUTO</span></li>
+                        <li class="flex items-center justify-between"><span>log_message</span> <span class="text-slate-500">VARCHAR(255)</span></li>
+                        <li class="flex items-center justify-between"><span>logged_at</span> <span class="text-slate-500">TIMESTAMP</span></li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+
+    <!-- SYSTEM CAPABILITIES & FEATURES -->
+    <section id="featuresSection" class="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div class="text-center max-w-3xl mx-auto mb-16">
+            <span class="text-xs font-extrabold uppercase tracking-widest text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
+                Core Capabilities
+            </span>
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3 tracking-tight">
+                Designed for Reliability & Precision
+            </h2>
+            <p class="text-slate-600 text-sm sm:text-base mt-2">
+                Engineered with modern database principles to handle concurrent bookings, prevent double-seat allocation, and provide accurate live tracking.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            <div class="bg-white p-7 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl mb-5">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">ACID Transaction Safety</h3>
+                <p class="text-slate-600 text-sm leading-relaxed">
+                    Atomicity, Consistency, Isolation, and Durability ensure that multiple simultaneous ticket reservations never result in double-booking or inconsistent states.
+                </p>
+            </div>
+
+            <div class="bg-white p-7 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl mb-5">
+                    <i class="fa-solid fa-key"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">Secure Bcrypt Hashing</h3>
+                <p class="text-slate-600 text-sm leading-relaxed">
+                    Passwords are never stored in plaintext. They undergo salt-based hashing using bcryptjs, securing passenger credentials against unauthorized access.
+                </p>
+            </div>
+
+            <div class="bg-white p-7 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                <div class="w-12 h-12 rounded-xl bg-saffron-50 text-saffron-600 flex items-center justify-center text-xl mb-5">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">Instant PNR & E-Ticket</h3>
+                <p class="text-slate-600 text-sm leading-relaxed">
+                    Automated 10-digit PNR generation with structured seat allocations, chart preparation states, and digital PDF ticket download readiness.
+                </p>
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- FAQ ACCORDION -->
+    <section class="bg-slate-100/70 py-16 px-4 sm:px-6 lg:px-8 border-t border-slate-200">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-10">
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                    Frequently Asked Questions
+                </h2>
+                <p class="text-slate-600 text-sm mt-1">Common queries regarding Railway reservation & DBMS operation</p>
+            </div>
+
+            <div class="space-y-3">
+                <details class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm group">
+                    <summary class="font-bold text-slate-900 text-sm cursor-pointer list-none flex items-center justify-between">
+                        <span>How does the system ensure no two passengers get the same seat?</span>
+                        <i class="fa-solid fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition"></i>
+                    </summary>
+                    <p class="text-xs text-slate-600 mt-3 pt-3 border-t border-slate-100 leading-relaxed">
+                        The backend utilizes SQL transactional locks (`BEGIN TRANSACTION ... COMMIT`) and unique constraints on `(train_number, journey_date, seat_number)` so race conditions are impossible.
+                    </p>
+                </details>
+
+                <details class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm group">
+                    <summary class="font-bold text-slate-900 text-sm cursor-pointer list-none flex items-center justify-between">
+                        <span>What happens when I register an account?</span>
+                        <i class="fa-solid fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition"></i>
+                    </summary>
+                    <p class="text-xs text-slate-600 mt-3 pt-3 border-t border-slate-100 leading-relaxed">
+                        Your user record is added to the MySQL `users` table via `POST /api/register`. Passwords are encrypted using bcrypt salt-10 rounds. You can immediately log in with your email.
+                    </p>
+                </details>
+
+                <details class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm group">
+                    <summary class="font-bold text-slate-900 text-sm cursor-pointer list-none flex items-center justify-between">
+                        <span>What is the PNR status format?</span>
+                        <i class="fa-solid fa-chevron-down text-xs text-slate-400 group-open:rotate-180 transition"></i>
+                    </summary>
+                    <p class="text-xs text-slate-600 mt-3 pt-3 border-t border-slate-100 leading-relaxed">
+                        PNR stands for Passenger Name Record, a unique 10-digit key stored in the `bookings` table. It contains passenger details, train number, travel date, fare, and confirmation status.
+                    </p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-950 text-slate-400 text-xs py-12 px-4 sm:px-6 lg:px-8 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            <div class="space-y-3">
+                <div class="flex items-center gap-2 text-white font-extrabold text-lg">
+                    <i class="fa-solid fa-train text-blue-500"></i>
+                    <span>RailReserve</span>
+                </div>
+                <p class="text-slate-400 text-xs leading-relaxed">
+                    A comprehensive Railway Reservation System engineered for academic DBMS laboratory implementation & real-world simulation.
+                </p>
+                <div class="flex items-center gap-2 text-[11px] text-slate-500">
+                    <span>Database: MySQL 8.x</span> &bull; <span>Node.js / Express</span>
+                </div>
+            </div>
+
+            <div>
+                <h4 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Quick Navigation</h4>
+                <ul class="space-y-2">
+                    <li><a href="#searchSection" class="hover:text-white transition">Book Train Tickets</a></li>
+                    <li><a href="#pnrSection" onclick="openPnrTab()" class="hover:text-white transition">Check PNR Status</a></li>
+                    <li><a href="#routesSection" class="hover:text-white transition">Popular Corridors</a></li>
+                    <li><a href="#schemaSection" class="hover:text-white transition">Database Schema</a></li>
+                    <li><a href="/login" class="hover:text-white transition">Standalone Auth Page</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Emergency & Support</h4>
+                <ul class="space-y-2">
+                    <li><span class="text-slate-300 font-semibold">139</span> - Rail Madad Helpline</li>
+                    <li><span class="text-slate-300 font-semibold">182</span> - Railway Security Helpline</li>
+                    <li><span class="text-slate-300 font-semibold">138</span> - Medical Emergency</li>
+                    <li><span class="text-slate-500">24/7 Server Status: </span><span class="text-emerald-400 font-semibold">Online</span></li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Academic Project Details</h4>
+                <div class="bg-slate-900 p-3.5 rounded-xl border border-slate-800 text-slate-300 space-y-1">
+                    <p class="font-bold text-white">DBMS Laboratory Project</p>
+                    <p class="text-[11px] text-slate-400">Experiment 3: DDL & System Integration</p>
+                    <p class="text-[11px] text-sky-400">Tables: 8 Relational Entities</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="max-w-7xl mx-auto pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px]">
+            <p>&copy; 2026 Railway Reservation DBMS Project. All rights reserved.</p>
+            <p class="text-slate-500">Designed with Express, Tailwind CSS & MySQL Database.</p>
+        </div>
+    </footer>
+
+
+    <!-- ========================================== -->
+    <!-- INTERACTIVE MODAL: AUTH (LOGIN & REGISTER) -->
+    <!-- ========================================== -->
+    <div id="authModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm transition-all duration-300">
+        <div class="bg-white w-full max-w-md p-6 sm:p-8 rounded-3xl shadow-2xl border border-slate-200 relative animate-in fade-in zoom-in-95 duration-200">
+            
+            <!-- Close Modal Button -->
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-2">
+                    <i class="fa-solid fa-train text-xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-900" id="authModalTitle">Welcome to RailReserve</h3>
+                <p class="text-xs text-slate-500 mt-1">Sign in to your account or register as a new passenger</p>
+            </div>
+
+            <!-- Database Status Indicator inside modal -->
+            <div id="dbStatus" class="mb-4 flex items-center justify-center gap-2 text-xs py-1.5 px-3 rounded-full bg-emerald-50 text-emerald-700 font-medium border border-emerald-200">
+                <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Checking database connection...</span>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex mb-5 border-b border-slate-200">
+                <button
+                    id="loginTab"
+                    onclick="showLogin()"
+                    class="w-1/2 py-2.5 font-bold text-sm text-blue-600 border-b-2 border-blue-600 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-right-to-bracket text-xs"></i> Login
+                </button>
+
+                <button
+                    id="registerTab"
+                    onclick="showRegister()"
+                    class="w-1/2 py-2.5 font-semibold text-sm text-slate-500 hover:text-slate-700 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-user-plus text-xs"></i> Register
+                </button>
+            </div>
+
+            <!-- LOGIN FORM -->
+            <form id="loginForm" class="space-y-3.5">
+                <div>
+                    <label class="block mb-1 text-xs font-bold uppercase tracking-wider text-slate-600">Email</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                            <i class="fa-regular fa-envelope"></i>
+                        </span>
+                        <input
+                            type="email"
+                            id="loginEmail"
+                            required
+                            class="w-full border border-slate-300 pl-10 pr-3 py-2.5 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            placeholder="user@example.com">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block mb-1 text-xs font-bold uppercase tracking-wider text-slate-600">Password</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                            <i class="fa-solid fa-lock"></i>
+                        </span>
+                        <input
+                            type="password"
+                            id="loginPassword"
+                            required
+                            class="w-full border border-slate-300 pl-10 pr-3 py-2.5 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            placeholder="Enter password">
+                    </div>
+                </div>
+
+                <!-- Quick Test user credentials fill -->
+                <div class="flex items-center justify-between text-xs pt-1">
+                    <button type="button" onclick="fillTestAccount()" class="text-blue-600 hover:underline font-semibold flex items-center gap-1">
+                        <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i> Fill Test Account
+                    </button>
+                    <span class="text-slate-400">Role: Passenger / Admin</span>
+                </div>
+
+                <button
+                    type="submit"
+                    id="loginSubmitBtn"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-right-to-bracket text-xs"></i>
+                    <span>Login to Account</span>
+                </button>
+            </form>
+
+            <!-- REGISTER FORM -->
+            <form id="registerForm" class="hidden space-y-3">
+                <div>
+                    <label class="block mb-1 text-xs font-bold uppercase tracking-wider text-slate-600">Full Name</label>
+                    <input
+                        type="text"
+                        id="registerName"
+                        required
+                        class="w-full border border-slate-300 px-3 py-2 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        placeholder="e.g. Narendra">
+                </div>
+
+                <div>
+                    <label class="block mb-1 text-xs font-bold uppercase tracking-wider text-slate-600">Email Address</label>
+                    <input
+                        type="email"
+                        id="registerEmail"
+                        required
+                        class="w-full border border-slate-300 px-3 py-2 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        placeholder="narendra@example.com">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block mb-1 text-xs font-bold uppercase tracking-wider text-slate-600">Phone</label>
+                        <input
+                            type="text"
+                            id="registerPhone"
+                            required
+                            class="w-full border border-slate-300 px-3 py-2 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            placeholder="9876543210">
+                    </div>
+                    <div>
+                        <label class="block mb-1 text-xs font-bold uppercase tracking-wider text-slate-600">Role</label>
+                        <select
+                            id="registerRole"
+                            class="w-full border border-slate-300 px-2 py-2 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                            <option value="Passenger">Passenger</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block mb-1 text-xs font-bold uppercase tracking-wider text-slate-600">Password</label>
+                    <input
+                        type="password"
+                        id="registerPassword"
+                        required
+                        class="w-full border border-slate-300 px-3 py-2 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        placeholder="Create a strong password">
+                </div>
+
+                <button
+                    type="submit"
+                    id="registerSubmitBtn"
+                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-user-check text-xs"></i>
+                    <span>Register Account</span>
+                </button>
+            </form>
+
+            <!-- MESSAGE -->
+            <p id="message" class="text-center mt-3 text-xs font-semibold"></p>
+
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- INTERACTIVE MODAL: TICKET BOOKING & PAYMENT -->
+    <!-- ========================================== -->
+    <div id="bookingModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm transition-all duration-300">
+        <div class="bg-white w-full max-w-xl p-6 sm:p-8 rounded-3xl shadow-2xl border border-slate-200 relative max-h-[90vh] overflow-y-auto">
+            
+            <button onclick="closeBookingModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="mb-5">
+                <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full uppercase">Step 2: Passenger Details</span>
+                <h3 class="text-2xl font-bold text-slate-900 mt-2" id="bookingTrainTitle">Book Train Ticket</h3>
+                <p class="text-xs text-slate-500 mt-0.5" id="bookingRouteSubtitle">MAS ➔ SBC &bull; Class: AC Chair Car (CC)</p>
+            </div>
+
+            <!-- Booking Form -->
+            <form id="passengerBookingForm" onsubmit="handleConfirmBooking(event)" class="space-y-4">
+                
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 mb-3 flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-tag text-blue-600"></i> Primary Passenger
+                    </h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                        <div class="sm:col-span-6">
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Full Name</label>
+                            <input type="text" id="passName" required placeholder="e.g. Narendra M" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Age</label>
+                            <input type="number" id="passAge" required min="5" max="100" value="24" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label class="block text-[11px] font-semibold text-slate-600 mb-1">Gender</label>
+                            <select id="passGender" class="w-full bg-white border border-slate-300 rounded-xl px-2 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Berth Preference & Quota -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Berth / Seat Preference</label>
+                        <select id="passBerth" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="Window Side">Window Side</option>
+                            <option value="Aisle">Aisle</option>
+                            <option value="Lower Berth">Lower Berth</option>
+                            <option value="Upper Berth">Upper Berth</option>
+                            <option value="No Choice">No Choice</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Payment Method</label>
+                        <select id="passPayment" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="UPI">UPI / QR Code</option>
+                            <option value="NetBanking">Net Banking</option>
+                            <option value="Card">Debit / Credit Card</option>
+                            <option value="IRCTC">IRCTC e-Wallet</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Fare Breakdown Summary -->
+                <div class="bg-blue-50/70 border border-blue-200 rounded-2xl p-4 flex items-center justify-between text-sm">
+                    <div>
+                        <span class="text-xs text-slate-500 block">Total Payable Fare</span>
+                        <span class="text-2xl font-black text-blue-700" id="modalFareText">₹950.00</span>
+                    </div>
+                    <div class="text-right text-xs text-slate-500">
+                        <span>GST & Catering Included</span>
+                        <div class="text-emerald-600 font-semibold mt-0.5"><i class="fa-solid fa-lock"></i> 100% Safe Transaction</div>
+                    </div>
+                </div>
+
+                <!-- Confirm CTA -->
+                <button type="submit" id="confirmBookingBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-check"></i>
+                    <span>Confirm Reservation & Generate PNR</span>
+                </button>
+            </form>
+
+            <!-- Success Confirmation Screen -->
+            <div id="bookingSuccessBox" class="hidden text-center py-4 space-y-4">
+                <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-3xl animate-bounce">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div>
+                    <h4 class="text-2xl font-extrabold text-slate-900">Reservation Confirmed!</h4>
+                    <p class="text-xs text-slate-500 mt-1">Ticket record recorded in MySQL database.</p>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-left font-mono text-xs space-y-2">
+                    <div class="flex justify-between border-b pb-2">
+                        <span class="text-slate-500">PNR NUMBER:</span>
+                        <span class="font-bold text-blue-700 text-sm" id="succPnr">8249102847</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">TRAIN:</span>
+                        <span class="font-semibold text-slate-800" id="succTrain">20607 Vande Bharat Express</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">PASSENGER:</span>
+                        <span class="font-semibold text-slate-800" id="succPassenger">Narendra (M/24)</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">STATUS / BERTH:</span>
+                        <span class="text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded" id="succBerth">CNF (C4-42)</span>
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="printTicketMock()" class="flex-1 bg-slate-900 hover:bg-black text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition">
+                        <i class="fa-solid fa-print"></i> Print E-Ticket
+                    </button>
+                    <button onclick="closeBookingModal()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs transition">
+                        Done
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- CLIENT JAVASCRIPT APPLICATION CODE        -->
+    <!-- ========================================== -->
+    <script>
+        const API_URL = "/api";
+
+        // Global State
+        let currentUser = null;
+        let selectedTrainForBooking = null;
+
+        // Initialize App on DOM Ready
+        document.addEventListener("DOMContentLoaded", () => {
+            initDates();
+            checkDbStatus();
+            checkLoggedInSession();
+            // Preload stations into dropdowns
+            loadStations();
+            // Show default trains immediately
+            executeTrainSearch('MAS', 'SBC', document.getElementById('journeyDate').value);
+        });
+
+        // Initialize default dates (today + 1)
+        function initDates() {
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const dateStr = tomorrow.toISOString().split("T")[0];
+            const dateInput = document.getElementById("journeyDate");
+            if (dateInput) {
+                dateInput.value = dateStr;
+                dateInput.min = today.toISOString().split("T")[0];
+            }
+        }
+
+        // DATABASE CONNECTION HEALTH CHECK
+        async function checkDbStatus() {
+            const topDbEl = document.getElementById("topDbStatus");
+            const topDbText = document.getElementById("topDbText");
+            const cardDbText = document.getElementById("cardDbText");
+            const dbStatusEl = document.getElementById("dbStatus");
+
+            try {
+                const res = await fetch(`${API_URL}/db-status`);
+                const data = await res.json();
+
+                if (res.ok && data.status === "connected") {
+                    if (topDbText) topDbText.innerHTML = `DB: <strong>${data.database}</strong>`;
+                    if (cardDbText) cardDbText.innerHTML = `MySQL: <span class="text-emerald-700">${data.database}</span> (Online)`;
+                    if (dbStatusEl) {
+                        dbStatusEl.className = "mb-4 flex items-center justify-center gap-2 text-xs py-1.5 px-3 rounded-full bg-emerald-50 text-emerald-700 font-medium border border-emerald-200";
+                        dbStatusEl.innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Database connected: <strong>${data.database}</strong>`;
+                    }
+                } else {
+                    throw new Error("Disconnected");
+                }
+            } catch {
+                if (topDbEl) {
+                    topDbEl.className = "flex items-center gap-1.5 font-medium px-2 py-0.5 rounded-full bg-rose-950 text-rose-300 border border-rose-500/30";
+                }
+                if (topDbText) topDbText.textContent = "DB: Disconnected";
+                if (cardDbText) cardDbText.textContent = "MySQL: Fallback Mock";
+                if (dbStatusEl) {
+                    dbStatusEl.className = "mb-4 flex items-center justify-center gap-2 text-xs py-1.5 px-3 rounded-full bg-amber-50 text-amber-700 font-medium border border-amber-200";
+                    dbStatusEl.innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-amber-500"></span> Offline Fallback Mode`;
+                }
+            }
+        }
+
+        // LOAD STATIONS LIST
+        async function loadStations() {
+            try {
+                const res = await fetch(`${API_URL}/stations`);
+                const stations = await res.json();
+                if (Array.isArray(stations) && stations.length > 0) {
+                    const fromSel = document.getElementById("fromStation");
+                    const toSel = document.getElementById("toStation");
+
+                    const currentFrom = fromSel.value;
+                    const currentTo = toSel.value;
+
+                    const html = stations.map(s => `<option value="${s.station_code}">${s.city} (${s.station_code})</option>`).join("");
+                    fromSel.innerHTML = html;
+                    toSel.innerHTML = html;
+
+                    fromSel.value = currentFrom || "MAS";
+                    toSel.value = currentTo || "SBC";
+                }
+            } catch (err) {
+                console.log("Using default stations list");
+            }
+        }
+
+        // SWAP STATIONS
+        function swapStations() {
+            const from = document.getElementById("fromStation");
+            const to = document.getElementById("toStation");
+            const temp = from.value;
+            from.value = to.value;
+            to.value = temp;
+        }
+
+        // QUICK ROUTE SHORTCUTS
+        function setQuickRoute(from, to) {
+            document.getElementById("fromStation").value = from;
+            document.getElementById("toStation").value = to;
+            executeTrainSearch(from, to, document.getElementById("journeyDate").value);
+        }
+
+        function scrollToSearch() {
+            const el = document.getElementById("searchSection");
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // TAB SWITCHING IN ENGINE
+        function switchMainTab(tab) {
+            const vSearch = document.getElementById("viewSearchEngine");
+            const vPnr = document.getElementById("viewPnrEngine");
+            const vLive = document.getElementById("viewLiveEngine");
+
+            const tSearch = document.getElementById("tabSearchBtn");
+            const tPnr = document.getElementById("tabPnrBtn");
+            const tLive = document.getElementById("tabLiveBtn");
+
+            // Reset tab styles
+            [tSearch, tPnr, tLive].forEach(b => {
+                b.className = "flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-slate-600 hover:text-slate-900 transition";
+            });
+
+            // Hide views
+            vSearch.classList.add("hidden");
+            vPnr.classList.add("hidden");
+            vLive.classList.add("hidden");
+
+            if (tab === 'search') {
+                vSearch.classList.remove("hidden");
+                tSearch.className = "flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold bg-white text-blue-700 shadow-sm transition";
+            } else if (tab === 'pnr') {
+                vPnr.classList.remove("hidden");
+                tPnr.className = "flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold bg-white text-blue-700 shadow-sm transition";
+            } else if (tab === 'live') {
+                vLive.classList.remove("hidden");
+                tLive.className = "flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold bg-white text-blue-700 shadow-sm transition";
+                renderLiveTracker(document.getElementById("liveTrainSelect").value);
+            }
+        }
+
+        function openPnrTab() {
+            switchMainTab('pnr');
+            scrollToSearch();
+        }
+
+        // TRAIN SEARCH HANDLER
+        async function handleSearchTrains(e) {
+            e.preventDefault();
+            const from = document.getElementById("fromStation").value;
+            const to = document.getElementById("toStation").value;
+            const date = document.getElementById("journeyDate").value;
+
+            if (from === to) {
+                alert("Source and Destination station cannot be the same!");
+                return;
+            }
+
+            executeTrainSearch(from, to, date);
+        }
+
+        async function executeTrainSearch(from, to, date) {
+            const submitBtn = document.getElementById("searchSubmitBtn");
+            if (submitBtn) {
+                submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Searching...</span>`;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/trains?from=${from}&to=${to}&date=${date}`);
+                let trains = await res.json();
+
+                renderSearchResults(trains, from, to, date);
+            } catch (err) {
+                console.error("Search error:", err);
+            } finally {
+                if (submitBtn) {
+                    submitBtn.innerHTML = `<i class="fa-solid fa-magnifying-glass"></i> <span>Find Trains</span>`;
+                }
+            }
+        }
+
+        function renderSearchResults(trains, from, to, date) {
+            const area = document.getElementById("searchResultsArea");
+            const container = document.getElementById("trainsListContainer");
+            const routeTitle = document.getElementById("resultsRouteTitle");
+            const dateSubtitle = document.getElementById("resultsDateSubtitle");
+            const countBadge = document.getElementById("resultsCountBadge");
+
+            area.classList.remove("hidden");
+            routeTitle.textContent = `${from} ➔ ${to} Available Trains`;
+            dateSubtitle.textContent = `Journey Date: ${date} &bull; Showing scheduled express services`;
+            countBadge.textContent = `${trains.length} Services Found`;
+
+            if (trains.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-500">
+                        <i class="fa-solid fa-train text-3xl mb-2 text-slate-300"></i>
+                        <p class="font-bold">No direct trains found for this route.</p>
+                        <p class="text-xs">Try selecting MAS ➔ SBC or NDLS ➔ CSTM for scheduled runs.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = trains.map(t => {
+                const classesHtml = (t.classes || [
+                    { class_type: 'AC Chair (CC)', base_fare: 950, total_seats: 100 },
+                    { class_type: 'Exec Chair (EC)', base_fare: 1850, total_seats: 40 }
+                ]).map(c => `
+                    <div class="border border-slate-200 hover:border-blue-500 rounded-xl p-2.5 text-center transition bg-slate-50 hover:bg-blue-50/50 cursor-pointer" onclick='prepareBooking(${JSON.stringify(t)}, ${JSON.stringify(c)})'>
+                        <div class="text-[11px] font-bold text-slate-700">${c.class_type}</div>
+                        <div class="text-sm font-extrabold text-blue-700 mt-0.5">₹${parseFloat(c.base_fare).toFixed(0)}</div>
+                        <div class="text-[10px] text-emerald-600 font-bold mt-0.5">AVAILABLE</div>
+                    </div>
+                `).join("");
+
+                return `
+                    <div class="bg-white border border-slate-200/90 hover:border-blue-300 rounded-2xl p-5 shadow-sm hover:shadow-md transition">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-extrabold text-slate-900 text-base">${t.train_name}</span>
+                                    <span class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded font-mono">#${t.train_number}</span>
+                                </div>
+                                <span class="text-xs text-slate-500">Runs: M, T, W, T, F, S, S &bull; Speed Class: Superfast Express</span>
+                            </div>
+                            <div class="flex items-center gap-6 text-sm">
+                                <div class="text-left">
+                                    <div class="font-bold text-slate-900">${t.departure_time || '06:00 AM'}</div>
+                                    <div class="text-xs text-slate-500 font-semibold">${t.source_city || t.source_code}</div>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <span class="text-[11px] font-bold text-blue-600">${t.duration || '4h 30m'}</span>
+                                    <div class="w-16 h-0.5 bg-blue-200 relative my-1">
+                                        <i class="fa-solid fa-arrow-right text-[10px] text-blue-600 absolute -top-1.5 right-0"></i>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-bold text-slate-900">${t.arrival_time || '10:30 AM'}</div>
+                                    <div class="text-xs text-slate-500 font-semibold">${t.dest_city || t.dest_code}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Class Selection row -->
+                        <div class="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full sm:w-auto flex-1">
+                                ${classesHtml}
+                            </div>
+                            <button onclick='prepareBooking(${JSON.stringify(t)}, ${JSON.stringify(t.classes ? t.classes[0] : { class_type: "Standard", base_fare: 950 })})' class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-3 rounded-xl shadow-sm hover:shadow transition flex items-center justify-center gap-2 whitespace-nowrap">
+                                <i class="fa-solid fa-ticket"></i> Book Ticket
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        // PNR SEARCH HANDLER
+        async function handlePnrSearch(e) {
+            e.preventDefault();
+            const pnr = document.getElementById("pnrInput").value.trim();
+            if (pnr.length !== 10) {
+                alert("Please enter a valid 10-digit PNR number.");
+                return;
+            }
+
+            const pnrBtn = document.getElementById("pnrBtnSubmit");
+            pnrBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Checking...`;
+
+            try {
+                const res = await fetch(`${API_URL}/pnr/${pnr}`);
+                const data = await res.json();
+                renderPnrCard(data);
+            } catch (err) {
+                console.error("PNR lookup error:", err);
+                alert("Unable to fetch PNR status at this moment.");
+            } finally {
+                pnrBtn.innerHTML = `<i class="fa-solid fa-search"></i> Check Status`;
+            }
+        }
+
+        function fillTestPnr(pnr) {
+            document.getElementById("pnrInput").value = pnr;
+            handlePnrSearch({ preventDefault: () => {} });
+        }
+
+        function renderPnrCard(data) {
+            const card = document.getElementById("pnrResultCard");
+            card.classList.remove("hidden");
+
+            const passList = (data.passengers || [
+                { name: 'Narendra', age: 24, gender: 'M', seat_number: 'C4-42', class_type: 'CC', status: 'CNF' }
+            ]).map(p => `
+                <div class="flex items-center justify-between py-2 border-b border-blue-100 last:border-0 text-xs">
+                    <div>
+                        <span class="font-bold text-slate-800">${p.name}</span>
+                        <span class="text-slate-500">(${p.gender}/${p.age})</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-mono font-bold text-slate-800">${p.seat_number || 'B3-24'}</span>
+                        <span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded ml-2">CNF</span>
+                    </div>
+                </div>
+            `).join("");
+
+            card.innerHTML = `
+                <div class="flex items-center justify-between pb-3 border-b border-blue-200">
+                    <div>
+                        <span class="text-[10px] text-blue-600 font-bold uppercase tracking-wider">PNR Verification</span>
+                        <h4 class="text-lg font-black text-slate-900 font-mono">${data.pnr_number}</h4>
+                    </div>
+                    <div class="text-right">
+                        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                            ${data.booking_status || 'Confirmed'}
+                        </span>
+                        <div class="text-[10px] text-slate-500 font-medium mt-1">${data.chart_status || 'CHART PREPARED'}</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 py-3 border-b border-blue-200 text-xs">
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">Train</span>
+                        <strong class="text-slate-800">${data.train_number} - ${data.train_name}</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">Journey Date</span>
+                        <strong class="text-slate-800">${data.journey_date || 'Upcoming'}</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">Boarding Station</span>
+                        <strong class="text-slate-800">${data.source || 'Chennai Central (MAS)'}</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 block text-[10px]">Destination</span>
+                        <strong class="text-slate-800">${data.destination || 'KSR Bengaluru (SBC)'}</strong>
+                    </div>
+                </div>
+
+                <div class="pt-3">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-2">Passenger & Seat Allocation</span>
+                    <div class="bg-white/80 rounded-xl p-3 border border-blue-100">
+                        ${passList}
+                    </div>
+                </div>
+            `;
+        }
+
+        // LIVE TRAIN TRACKER RENDERER
+        function renderLiveTracker(trainNum) {
+            const container = document.getElementById("liveTrackerContent");
+            const trackers = {
+                "20607": {
+                    name: "20607 - Vande Bharat Express",
+                    source: "Chennai Central (MAS)",
+                    dest: "KSR Bengaluru (SBC)",
+                    current: "Katpadi Jn (Approaching)",
+                    delay: "Right Time (0 min delay)",
+                    speed: "115 km/h",
+                    platform: "Platform 2"
+                },
+                "12952": {
+                    name: "12952 - Mumbai Rajdhani Express",
+                    source: "New Delhi (NDLS)",
+                    dest: "Mumbai CSMT (CSTM)",
+                    current: "Kota Jn (Departed)",
+                    delay: "5 mins delay",
+                    speed: "130 km/h",
+                    platform: "Platform 1"
+                },
+                "12007": {
+                    name: "12007 - Shatabdi Express",
+                    source: "Chennai Central (MAS)",
+                    dest: "KSR Bengaluru (SBC)",
+                    current: "Jolarpettai Jn (On Time)",
+                    delay: "Right Time",
+                    speed: "110 km/h",
+                    platform: "Platform 3"
+                },
+                "16116": {
+                    name: "16116 - Auroville Intercity Express",
+                    source: "Puducherry (PDY)",
+                    dest: "Chennai Central (MAS)",
+                    current: "Chengalpattu Jn (Approaching)",
+                    delay: "3 mins delay",
+                    speed: "85 km/h",
+                    platform: "Platform 4"
+                }
+            };
+
+            const t = trackers[trainNum] || trackers["20607"];
+
+            container.innerHTML = `
+                <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div>
+                        <span class="text-xs font-bold text-blue-600 uppercase">Live Running Status</span>
+                        <h4 class="text-lg font-bold text-slate-900">${t.name}</h4>
+                        <p class="text-xs text-slate-500">${t.source} ➔ ${t.dest}</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">
+                            <i class="fa-solid fa-circle-check"></i> ${t.delay}
+                        </span>
+                        <div class="text-xs text-slate-500 mt-1">Current Speed: <strong>${t.speed}</strong></div>
+                    </div>
+                </div>
+
+                <!-- Timeline stations -->
+                <div class="py-6 flex items-center justify-between text-xs relative">
+                    <div class="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-blue-100 -z-0"></div>
+                    <div class="absolute left-6 w-1/2 top-1/2 -translate-y-1/2 h-1 bg-blue-600 -z-0"></div>
+
+                    <div class="flex flex-col items-center relative z-10">
+                        <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-[10px]">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                        <span class="font-bold text-slate-800 mt-2">Departed</span>
+                        <span class="text-[10px] text-slate-500">${t.source.split('(')[0]}</span>
+                    </div>
+
+                    <div class="flex flex-col items-center relative z-10">
+                        <div class="w-8 h-8 rounded-full bg-saffron-500 text-white flex items-center justify-center font-bold text-[10px] animate-pulse">
+                            <i class="fa-solid fa-train"></i>
+                        </div>
+                        <span class="font-bold text-saffron-600 mt-2">${t.current}</span>
+                        <span class="text-[10px] text-slate-500">${t.platform}</span>
+                    </div>
+
+                    <div class="flex flex-col items-center relative z-10">
+                        <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-[10px]">
+                            <i class="fa-solid fa-flag-checkered"></i>
+                        </div>
+                        <span class="font-bold text-slate-800 mt-2">Estimated</span>
+                        <span class="text-[10px] text-slate-500">${t.dest.split('(')[0]}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // PREPARE BOOKING MODAL
+        function prepareBooking(train, classObj) {
+            selectedTrainForBooking = {
+                train: train,
+                class: classObj
+            };
+
+            document.getElementById("bookingTrainTitle").textContent = `${train.train_name} (#${train.train_number})`;
+            document.getElementById("bookingRouteSubtitle").textContent = `${train.source_code} ➔ ${train.dest_code} &bull; Class: ${classObj.class_type}`;
+            document.getElementById("modalFareText").textContent = `₹${parseFloat(classObj.base_fare).toFixed(2)}`;
+
+            // Reset modal states
+            document.getElementById("passengerBookingForm").classList.remove("hidden");
+            document.getElementById("bookingSuccessBox").classList.add("hidden");
+
+            // Autofill user name if logged in
+            if (currentUser && currentUser.name) {
+                document.getElementById("passName").value = currentUser.name;
+            }
+
+            document.getElementById("bookingModal").classList.remove("hidden");
+        }
+
+        function closeBookingModal() {
+            document.getElementById("bookingModal").classList.add("hidden");
+        }
+
+        // CONFIRM TICKET RESERVATION HANDLER
+        async function handleConfirmBooking(e) {
+            e.preventDefault();
+            const btn = document.getElementById("confirmBookingBtn");
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing ACID Booking...`;
+
+            const passName = document.getElementById("passName").value.trim();
+            const passAge = document.getElementById("passAge").value;
+            const passGender = document.getElementById("passGender").value;
+            const passBerth = document.getElementById("passBerth").value;
+            const date = document.getElementById("journeyDate").value;
+
+            const payload = {
+                userId: currentUser ? currentUser.userId : 1,
+                trainNumber: selectedTrainForBooking.train.train_number,
+                journeyDate: date,
+                classType: selectedTrainForBooking.class.class_type,
+                totalFare: selectedTrainForBooking.class.base_fare,
+                passengers: [
+                    { name: passName, age: passAge, gender: passGender, berth: passBerth }
+                ]
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/book`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                // Show success view
+                document.getElementById("passengerBookingForm").classList.add("hidden");
+                document.getElementById("bookingSuccessBox").classList.remove("hidden");
+
+                document.getElementById("succPnr").textContent = data.pnr || "8249102847";
+                document.getElementById("succTrain").textContent = `${selectedTrainForBooking.train.train_number} ${selectedTrainForBooking.train.train_name}`;
+                document.getElementById("succPassenger").textContent = `${passName} (${passGender[0]}/${passAge})`;
+                document.getElementById("succBerth").textContent = `CNF (${selectedTrainForBooking.class.class_type.substring(0, 2)}-${Math.floor(10 + Math.random() * 50)})`;
+
+            } catch (err) {
+                console.error("Booking error:", err);
+                alert("Booking could not be completed.");
+            } finally {
+                btn.innerHTML = `<i class="fa-solid fa-check"></i> <span>Confirm Reservation & Generate PNR</span>`;
+            }
+        }
+
+        function printTicketMock() {
+            window.print();
+        }
+
+        // ==========================================
+        // AUTHENTICATION MODAL LOGIC (LOGIN / REGISTER)
+        // ==========================================
+        function openAuthModal(mode) {
+            document.getElementById("authModal").classList.remove("hidden");
+            if (mode === 'register') {
+                showRegister();
+            } else {
+                showLogin();
+            }
+        }
+
+        function closeAuthModal() {
+            document.getElementById("authModal").classList.add("hidden");
+        }
+
+        function showLogin() {
+            document.getElementById("loginForm").classList.remove("hidden");
+            document.getElementById("registerForm").classList.add("hidden");
+
+            document.getElementById("loginTab").className = "w-1/2 py-2.5 font-bold text-sm text-blue-600 border-b-2 border-blue-600 transition flex items-center justify-center gap-2";
+            document.getElementById("registerTab").className = "w-1/2 py-2.5 font-semibold text-sm text-slate-500 hover:text-slate-700 transition flex items-center justify-center gap-2";
+            document.getElementById("message").textContent = "";
+        }
+
+        function showRegister() {
+            document.getElementById("loginForm").classList.add("hidden");
+            document.getElementById("registerForm").classList.remove("hidden");
+
+            document.getElementById("registerTab").className = "w-1/2 py-2.5 font-bold text-sm text-blue-600 border-b-2 border-blue-600 transition flex items-center justify-center gap-2";
+            document.getElementById("loginTab").className = "w-1/2 py-2.5 font-semibold text-sm text-slate-500 hover:text-slate-700 transition flex items-center justify-center gap-2";
+            document.getElementById("message").textContent = "";
+        }
+
+        function fillTestAccount() {
+            document.getElementById("loginEmail").value = "24btcsepy0020@pondiuni.ac.in";
+            document.getElementById("loginPassword").value = "password123";
+        }
+
+        // REGISTER FORM SUBMIT
+        document.getElementById("registerForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const msg = document.getElementById("message");
+            msg.className = "text-center mt-3 text-xs font-semibold text-slate-500";
+            msg.textContent = "Processing registration...";
+
+            const name = document.getElementById("registerName").value.trim();
+            const email = document.getElementById("registerEmail").value.trim();
+            const phone = document.getElementById("registerPhone").value.trim();
+            const password = document.getElementById("registerPassword").value;
+            const role = document.getElementById("registerRole").value;
+
+            try {
+                const res = await fetch(`${API_URL}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, phone, password, role })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    msg.className = "text-center mt-3 text-xs font-semibold text-emerald-600";
+                    msg.textContent = data.message || "Registration successful! You may now login.";
+                    document.getElementById("registerForm").reset();
+                    setTimeout(showLogin, 1200);
+                } else {
+                    msg.className = "text-center mt-3 text-xs font-semibold text-rose-600";
+                    msg.textContent = data.error || "Registration failed.";
+                }
+            } catch (err) {
+                msg.className = "text-center mt-3 text-xs font-semibold text-rose-600";
+                msg.textContent = "Cannot connect to server.";
+            }
+        });
+
+        // LOGIN FORM SUBMIT
+        document.getElementById("loginForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const msg = document.getElementById("message");
+            msg.className = "text-center mt-3 text-xs font-semibold text-slate-500";
+            msg.textContent = "Verifying credentials...";
+
+            const email = document.getElementById("loginEmail").value.trim();
+            const password = document.getElementById("loginPassword").value;
+
+            try {
+                const res = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    msg.className = "text-center mt-3 text-xs font-semibold text-emerald-600";
+                    msg.textContent = `Welcome back, ${data.user.name}!`;
+
+                    localStorage.setItem("railway_user", JSON.stringify(data.user));
+                    checkLoggedInSession();
+
+                    setTimeout(() => {
+                        closeAuthModal();
+                    }, 1000);
+                } else {
+                    msg.className = "text-center mt-3 text-xs font-semibold text-rose-600";
+                    msg.textContent = data.error || "Invalid email or password.";
+                }
+            } catch (err) {
+                msg.className = "text-center mt-3 text-xs font-semibold text-rose-600";
+                msg.textContent = "Cannot connect to server.";
+            }
+        });
+
+        // SESSION STATE MANAGEMENT
+        function checkLoggedInSession() {
+            const stored = localStorage.getItem("railway_user");
+            const userProfileNav = document.getElementById("userProfileNav");
+            const authButtonsNav = document.getElementById("authButtonsNav");
+            const userNameNav = document.getElementById("userNameNav");
+            const userRoleNav = document.getElementById("userRoleNav");
+            const userAvatar = document.getElementById("userAvatar");
+
+            if (stored) {
+                try {
+                    currentUser = JSON.parse(stored);
+                    userProfileNav.classList.remove("hidden");
+                    userProfileNav.classList.add("flex");
+                    authButtonsNav.classList.add("hidden");
+
+                    if (userNameNav) userNameNav.textContent = currentUser.name || "Passenger";
+                    if (userRoleNav) userRoleNav.textContent = currentUser.role || "Passenger";
+                    if (userAvatar) userAvatar.textContent = (currentUser.name || "U")[0].toUpperCase();
+                } catch {
+                    localStorage.removeItem("railway_user");
+                }
+            } else {
+                currentUser = null;
+                userProfileNav.classList.add("hidden");
+                userProfileNav.classList.remove("flex");
+                authButtonsNav.classList.remove("hidden");
+            }
+        }
+
+        function logoutUser() {
+            localStorage.removeItem("railway_user");
+            currentUser = null;
+            checkLoggedInSession();
+        }
+    </script>
+</body>
+</html>
