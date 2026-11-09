@@ -3,322 +3,675 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Railway Reservation System - Login / Register</title>
+    <title>RailConnect &bull; Passenger & Admin Authentication</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            800: '#123B65',
+                            900: '#0C2340',
+                            950: '#081729'
+                        },
+                        railblue: {
+                            50: '#F0F6FC',
+                            100: '#E1EDF8',
+                            500: '#1E88E5',
+                            600: '#1769AA',
+                            700: '#125287'
+                        },
+                        saffron: {
+                            500: '#F28C28',
+                            600: '#E07817'
+                        },
+                        railgreen: {
+                            600: '#16804A'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .irctc-pattern {
+            background-color: #F3F6FA;
+            background-image: radial-gradient(#1769AA 0.5px, transparent 0.5px), radial-gradient(#1769AA 0.5px, #F3F6FA 0.5px);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            background-opacity: 0.05;
+        }
     </style>
 </head>
 
-<body class="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 min-h-screen flex flex-col items-center justify-center p-4">
+<body class="bg-[#F3F6FA] text-[#1F2937] min-h-screen flex flex-col justify-between selection:bg-railblue-600 selection:text-white">
 
-    <!-- Back to Landing Page link -->
-    <div class="w-full max-w-md mb-4 flex items-center justify-between">
-        <a href="/" class="inline-flex items-center gap-2 text-sm text-blue-200 hover:text-white transition">
-            <i class="fa-solid fa-arrow-left"></i>
-            <span>Back to Home / Landing Page</span>
-        </a>
-        <span class="text-xs text-blue-300/70 font-mono">DBMS Portal</span>
-    </div>
-
-    <div class="bg-white/95 backdrop-blur-md w-full max-w-md p-8 rounded-2xl shadow-2xl border border-white/20">
-
-        <div class="flex items-center justify-center gap-2 mb-2 text-blue-700">
-            <i class="fa-solid fa-train-subway text-2xl"></i>
-            <h1 class="text-2xl font-bold tracking-tight">
-                Railway Reservation
-            </h1>
-        </div>
-
-        <p class="text-center text-gray-500 mb-4 text-sm">
-            Access your passenger account or manage bookings
-        </p>
-
-        <!-- Database Status Indicator -->
-        <div id="dbStatus" class="mb-5 flex items-center justify-center gap-2 text-xs py-1.5 px-3 rounded-full bg-emerald-50 text-emerald-700 font-medium border border-emerald-200">
-            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Checking database connection...</span>
-        </div>
-
-        <!-- Tabs -->
-        <div class="flex mb-6 border-b border-gray-200">
-            <button
-                id="loginTab"
-                onclick="showLogin()"
-                class="w-1/2 py-2.5 font-semibold text-blue-600 border-b-2 border-blue-600 flex items-center justify-center gap-2 transition">
-                <i class="fa-solid fa-right-to-bracket text-xs"></i> Login
-            </button>
-
-            <button
-                id="registerTab"
-                onclick="showRegister()"
-                class="w-1/2 py-2.5 font-semibold text-gray-500 hover:text-gray-700 flex items-center justify-center gap-2 transition">
-                <i class="fa-solid fa-user-plus text-xs"></i> Register
-            </button>
-        </div>
-
-        <!-- LOGIN FORM -->
-        <form id="loginForm" class="space-y-4">
-            <div>
-                <label class="block mb-1 text-xs font-semibold uppercase tracking-wider text-gray-700">
-                    Email Address
-                </label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                        <i class="fa-regular fa-envelope"></i>
-                    </span>
-                    <input
-                        type="email"
-                        id="loginEmail"
-                        required
-                        class="w-full border border-gray-300 pl-10 pr-4 py-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                        placeholder="e.g. user@example.com">
-                </div>
+    <!-- ============================================== -->
+    <!-- 1. TOP UTILITY BAR                             -->
+    <!-- ============================================== -->
+    <div class="bg-[#123B65] text-white text-xs py-1.5 px-4 sm:px-8 border-b border-white/10">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-4 sm:gap-6">
+                <span class="flex items-center gap-1.5 font-medium text-slate-200">
+                    <i class="fa-regular fa-clock text-saffron-500"></i>
+                    <span id="liveClock" class="font-mono">--:--:-- IST</span>
+                </span>
+                <span class="hidden sm:flex items-center gap-1.5 text-slate-300">
+                    <i class="fa-solid fa-phone text-saffron-500"></i>
+                    <span>Railway Helpline: <strong class="text-white font-bold">139</strong></span>
+                </span>
             </div>
 
-            <div>
-                <label class="block mb-1 text-xs font-semibold uppercase tracking-wider text-gray-700">
-                    Password
-                </label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                        <i class="fa-solid fa-lock"></i>
-                    </span>
-                    <input
-                        type="password"
-                        id="loginPassword"
-                        required
-                        class="w-full border border-gray-300 pl-10 pr-4 py-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                        placeholder="Enter your password">
-                </div>
+            <div class="flex items-center gap-4 text-[11px]">
+                <a href="/" class="hover:text-saffron-500 transition flex items-center gap-1">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Home</span>
+                </a>
+                <span class="text-white/30">|</span>
+                <a href="/login" class="text-saffron-500 font-bold flex items-center gap-1">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>Portal Gateway</span>
+                </a>
             </div>
-
-            <button
-                type="submit"
-                id="loginBtn"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
-                <i class="fa-solid fa-arrow-right-to-bracket"></i>
-                <span>Login</span>
-            </button>
-        </form>
-
-        <!-- REGISTER FORM -->
-        <form id="registerForm" class="hidden space-y-4">
-            <div>
-                <label class="block mb-1 text-xs font-semibold uppercase tracking-wider text-gray-700">
-                    Full Name
-                </label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                        <i class="fa-regular fa-user"></i>
-                    </span>
-                    <input
-                        type="text"
-                        id="registerName"
-                        required
-                        class="w-full border border-gray-300 pl-10 pr-4 py-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                        placeholder="e.g. John Doe">
-                </div>
-            </div>
-
-            <div>
-                <label class="block mb-1 text-xs font-semibold uppercase tracking-wider text-gray-700">
-                    Email Address
-                </label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                        <i class="fa-regular fa-envelope"></i>
-                    </span>
-                    <input
-                        type="email"
-                        id="registerEmail"
-                        required
-                        class="w-full border border-gray-300 pl-10 pr-4 py-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                        placeholder="e.g. john@example.com">
-                </div>
-            </div>
-
-            <div>
-                <label class="block mb-1 text-xs font-semibold uppercase tracking-wider text-gray-700">
-                    Phone Number
-                </label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                        <i class="fa-solid fa-phone"></i>
-                    </span>
-                    <input
-                        type="text"
-                        id="registerPhone"
-                        required
-                        class="w-full border border-gray-300 pl-10 pr-4 py-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                        placeholder="e.g. 9876543210">
-                </div>
-            </div>
-
-            <div>
-                <label class="block mb-1 text-xs font-semibold uppercase tracking-wider text-gray-700">
-                    Password
-                </label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                        <i class="fa-solid fa-lock"></i>
-                    </span>
-                    <input
-                        type="password"
-                        id="registerPassword"
-                        required
-                        class="w-full border border-gray-300 pl-10 pr-4 py-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                        placeholder="Create a strong password">
-                </div>
-            </div>
-
-            <div>
-                <label class="block mb-1 text-xs font-semibold uppercase tracking-wider text-gray-700">
-                    Role
-                </label>
-                <select
-                    id="registerRole"
-                    class="w-full border border-gray-300 px-3 py-2.5 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
-                    <option value="Passenger">Passenger</option>
-                    <option value="Admin">Admin</option>
-                </select>
-            </div>
-
-            <button
-                type="submit"
-                id="registerBtn"
-                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 rounded-lg shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
-                <i class="fa-solid fa-user-check"></i>
-                <span>Register Account</span>
-            </button>
-        </form>
-
-        <!-- MESSAGE -->
-        <p id="message" class="text-center mt-5 text-sm font-medium"></p>
-
-        <!-- Demo credentials info -->
-        <div class="mt-6 pt-4 border-t border-gray-100 text-center">
-            <span class="text-xs text-gray-400">Railway Reservation System &bull; DBMS Project</span>
         </div>
     </div>
 
-<script>
-const API_URL = "/api";
+    <!-- ============================================== -->
+    <!-- 2. MAIN HEADER & BRANDING                      -->
+    <!-- ============================================== -->
+    <header class="bg-white border-b border-slate-200 py-3.5 px-4 sm:px-8 shadow-sm">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <a href="/" class="flex items-center gap-3 group">
+                <div class="w-11 h-11 rounded-xl bg-[#123B65] text-white flex items-center justify-center shadow-md group-hover:bg-[#1769AA] transition">
+                    <i class="fa-solid fa-train-subway text-xl text-saffron-500"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl sm:text-2xl font-black text-[#123B65] tracking-tight">Rail<span class="text-saffron-500">Connect</span></span>
+                        <span class="text-[9px] bg-blue-50 text-railblue-700 font-extrabold uppercase px-2 py-0.5 rounded border border-railblue-200">Official Portal</span>
+                    </div>
+                    <span class="text-[10px] sm:text-xs text-slate-500 block font-medium">Indian Railway Reservation System &bull; Academic Project</span>
+                </div>
+            </a>
 
-// Check Database Connection Status
-async function checkDbStatus() {
-    const statusEl = document.getElementById("dbStatus");
-    if (!statusEl) return;
-    try {
-        const res = await fetch(`${API_URL}/db-status`);
-        const data = await res.json();
-        if (res.ok && data.status === 'connected') {
-            statusEl.className = "mb-5 flex items-center justify-center gap-2 text-xs py-1.5 px-3 rounded-full bg-emerald-50 text-emerald-700 font-medium border border-emerald-200";
-            statusEl.innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span> Database connected: <strong>${data.database}</strong>`;
-        } else {
-            statusEl.className = "mb-5 flex items-center justify-center gap-2 text-xs py-1.5 px-3 rounded-full bg-rose-50 text-rose-700 font-medium border border-rose-200";
-            statusEl.innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-rose-500"></span> Database disconnected`;
+            <div class="flex items-center gap-3">
+                <div id="dbStatusBadge" class="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span id="dbStatusText">Checking MySQL...</span>
+                </div>
+                <a href="/" class="text-xs font-bold text-railblue-600 hover:text-railblue-700 border border-slate-300 hover:border-railblue-500 px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Back to Portal</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ============================================== -->
+    <!-- 3. AUTHENTICATION CONTAINER                    -->
+    <!-- ============================================== -->
+    <main class="flex-1 flex items-center justify-center py-10 px-4 sm:px-6 relative">
+        <div class="w-full max-w-md">
+
+            <!-- Security Notice Banner -->
+            <div id="redirectNotice" class="hidden mb-4 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-2.5 shadow-sm">
+                <i class="fa-solid fa-circle-exclamation text-amber-600 text-sm mt-0.5"></i>
+                <div>
+                    <strong class="font-bold block">Login Required to Continue Booking</strong>
+                    <span>Sign in to complete your reservation. Your selected train and journey parameters are preserved.</span>
+                </div>
+            </div>
+
+            <!-- Quick Demo Credentials Box -->
+            <div class="mb-4 bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm text-xs">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="font-bold text-[#123B65] flex items-center gap-1.5">
+                        <i class="fa-solid fa-key text-saffron-500"></i>
+                        <span>1-Click Test Credentials:</span>
+                    </span>
+                    <span class="text-[10px] text-slate-400 font-mono">Demo Fill</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="fillCredentials('passenger')" class="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-railblue-700 font-bold rounded-lg border border-blue-200 text-center transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-user text-xs"></i> Passenger
+                    </button>
+                    <button type="button" onclick="fillCredentials('admin')" class="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-lg border border-amber-200 text-center transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-user-shield text-xs"></i> Administrator
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Auth Card -->
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-200/90 overflow-hidden">
+                
+                <!-- Card Header with IRCTC Tri-Color Accent -->
+                <div class="h-1.5 bg-gradient-to-r from-saffron-500 via-white to-railgreen-600"></div>
+
+                <div class="p-6 sm:p-8">
+
+                    <!-- Portal Tabs -->
+                    <div class="flex border-b border-slate-200 mb-6">
+                        <button
+                            id="loginTab"
+                            onclick="showLogin()"
+                            class="w-1/2 pb-3 font-bold text-sm text-railblue-600 border-b-2 border-railblue-600 flex items-center justify-center gap-2 transition">
+                            <i class="fa-solid fa-right-to-bracket"></i>
+                            <span>Sign In</span>
+                        </button>
+                        <button
+                            id="registerTab"
+                            onclick="showRegister()"
+                            class="w-1/2 pb-3 font-bold text-sm text-slate-400 hover:text-slate-600 flex items-center justify-center gap-2 transition">
+                            <i class="fa-solid fa-user-plus"></i>
+                            <span>Register</span>
+                        </button>
+                    </div>
+
+                    <!-- Status Message Box -->
+                    <div id="authMessage" class="hidden mb-4 p-3 rounded-xl text-xs font-semibold flex items-center gap-2">
+                        <i id="authMsgIcon" class="fa-solid fa-circle-info"></i>
+                        <span id="authMsgText"></span>
+                    </div>
+
+                    <!-- ------------------------------------------ -->
+                    <!-- FORM 1: LOGIN                              -->
+                    <!-- ------------------------------------------ -->
+                    <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                                Email Address <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                    <i class="fa-regular fa-envelope text-sm"></i>
+                                </span>
+                                <input
+                                    type="email"
+                                    id="loginEmail"
+                                    required
+                                    class="w-full border border-slate-300 pl-10 pr-4 py-2.5 rounded-xl text-sm font-medium focus:ring-2 focus:ring-railblue-500 focus:outline-none transition"
+                                    placeholder="e.g. 24btcsepy0020@pondiuni.ac.in">
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="text-xs font-bold uppercase tracking-wider text-slate-600">
+                                    Password <span class="text-rose-500">*</span>
+                                </label>
+                                <a href="javascript:void(0)" onclick="alert('For project demonstration, use password: password123 (Passenger) or Admin@1234 (Admin)')" class="text-[11px] font-semibold text-railblue-600 hover:underline">
+                                    Forgot Password?
+                                </a>
+                            </div>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                    <i class="fa-solid fa-lock text-sm"></i>
+                                </span>
+                                <input
+                                    type="password"
+                                    id="loginPassword"
+                                    required
+                                    class="w-full border border-slate-300 pl-10 pr-11 py-2.5 rounded-xl text-sm font-medium focus:ring-2 focus:ring-railblue-500 focus:outline-none transition"
+                                    placeholder="Enter your password">
+                                <button
+                                    type="button"
+                                    onclick="togglePasswordVisibility('loginPassword', 'loginEyeIcon')"
+                                    class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none">
+                                    <i id="loginEyeIcon" class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between text-xs pt-1">
+                            <label class="flex items-center gap-2 cursor-pointer text-slate-600">
+                                <input type="checkbox" id="rememberMe" checked class="rounded border-slate-300 text-railblue-600 focus:ring-railblue-500">
+                                <span>Remember account</span>
+                            </label>
+                            <span class="text-slate-400 text-[11px]">Bcrypt SHA-256 Secure</span>
+                        </div>
+
+                        <button
+                            type="submit"
+                            id="loginSubmitBtn"
+                            class="w-full bg-[#123B65] hover:bg-[#1769AA] text-white font-bold py-3 rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 text-sm mt-2">
+                            <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                            <span>Sign In to RailConnect</span>
+                        </button>
+                    </form>
+
+                    <!-- ------------------------------------------ -->
+                    <!-- FORM 2: REGISTRATION                       -->
+                    <!-- ------------------------------------------ -->
+                    <form id="registerForm" onsubmit="handleRegisterSubmit(event)" class="hidden space-y-3.5">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                                Full Name <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                    <i class="fa-regular fa-user text-sm"></i>
+                                </span>
+                                <input
+                                    type="text"
+                                    id="regName"
+                                    required
+                                    class="w-full border border-slate-300 pl-10 pr-4 py-2.5 rounded-xl text-sm font-medium focus:ring-2 focus:ring-railblue-500 focus:outline-none"
+                                    placeholder="e.g. Narendra Sharma">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                                Email Address <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                    <i class="fa-regular fa-envelope text-sm"></i>
+                                </span>
+                                <input
+                                    type="email"
+                                    id="regEmail"
+                                    required
+                                    class="w-full border border-slate-300 pl-10 pr-4 py-2.5 rounded-xl text-sm font-medium focus:ring-2 focus:ring-railblue-500 focus:outline-none"
+                                    placeholder="e.g. passenger@domain.com">
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="text-xs font-bold uppercase tracking-wider text-slate-600">
+                                    Mobile Number <span class="text-rose-500">*</span>
+                                </label>
+                                <span class="text-[10px] text-railblue-600 font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-100">Strict 10 Digits (6-9)</span>
+                            </div>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 font-mono text-xs font-bold border-r border-slate-200 pr-2">
+                                    +91
+                                </span>
+                                <input
+                                    type="tel"
+                                    id="regPhone"
+                                    required
+                                    maxlength="10"
+                                    pattern="[6-9][0-9]{9}"
+                                    oninput="validatePhoneInput(this)"
+                                    class="w-full border border-slate-300 pl-14 pr-4 py-2.5 rounded-xl text-sm font-mono font-bold focus:ring-2 focus:ring-railblue-500 focus:outline-none"
+                                    placeholder="9876543210">
+                            </div>
+                            <div class="flex items-center justify-between mt-1 text-[10px]">
+                                <span id="phoneValidationHint" class="text-slate-400">Must start with 6, 7, 8, or 9</span>
+                                <span id="phoneDigitCounter" class="text-slate-400 font-mono">0/10 digits</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                                Password (Min. 6 characters) <span class="text-rose-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                    <i class="fa-solid fa-lock text-sm"></i>
+                                </span>
+                                <input
+                                    type="password"
+                                    id="regPassword"
+                                    required
+                                    minlength="6"
+                                    class="w-full border border-slate-300 pl-10 pr-11 py-2.5 rounded-xl text-sm font-medium focus:ring-2 focus:ring-railblue-500 focus:outline-none"
+                                    placeholder="Create password">
+                                <button
+                                    type="button"
+                                    onclick="togglePasswordVisibility('regPassword', 'regEyeIcon')"
+                                    class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none">
+                                    <i id="regEyeIcon" class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                                Role / Account Type <span class="text-rose-500">*</span>
+                            </label>
+                            <select
+                                id="regRole"
+                                class="w-full border border-slate-300 px-3 py-2.5 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-railblue-500 focus:outline-none bg-white">
+                                <option value="Passenger" selected>Passenger (Book tickets, PNR status, view history)</option>
+                                <option value="Admin">Administrator (Manage fleet, routes, timetable & audits)</option>
+                            </select>
+                        </div>
+
+                        <button
+                            type="submit"
+                            id="regSubmitBtn"
+                            class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 text-sm mt-3">
+                            <i class="fa-solid fa-user-check"></i>
+                            <span>Register New Account</span>
+                        </button>
+                    </form>
+
+                </div>
+
+                <!-- Card Footer Info -->
+                <div class="bg-slate-50 px-6 py-3.5 border-t border-slate-200 text-center">
+                    <span class="text-xs text-slate-500 flex items-center justify-center gap-1.5 font-medium">
+                        <i class="fa-solid fa-shield-halved text-emerald-600"></i>
+                        <span>Role-Based Access Control Active &bull; MySQL Protected</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Portal Switcher Card -->
+            <div class="mt-4 p-4 rounded-2xl bg-white/70 backdrop-blur-sm border border-slate-200 text-center text-xs">
+                <span class="text-slate-500">Need administrative operations cockpit?</span>
+                <a href="/login" onclick="fillCredentials('admin')" class="font-bold text-[#123B65] hover:text-railblue-600 underline ml-1">
+                    Sign in with Admin Credentials
+                </a>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ============================================== -->
+    <!-- 4. FOOTER & DISCLAIMER                         -->
+    <!-- ============================================== -->
+    <footer class="bg-[#123B65] text-slate-300 text-xs py-6 px-4 sm:px-8 border-t border-white/10">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+            <div>
+                <div class="font-bold text-white">RailConnect — Railway Reservation System</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">Academic Project &bull; Pondicherry University DBMS Lab &bull; MySQL 8.0 & Express.js</div>
+            </div>
+            <div class="text-[10px] text-slate-400 max-w-md">
+                Disclaimer: RailConnect is an academic simulation designed for educational purposes and is not affiliated with IRCTC or the Ministry of Railways, Government of India.
+            </div>
+        </div>
+    </footer>
+
+    <!-- ============================================== -->
+    <!-- 5. JAVASCRIPT LOGIC                            -->
+    <!-- ============================================== -->
+    <script>
+        const API_URL = "/api";
+
+        // Live Clock
+        function updateLiveClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-IN', { hour12: false });
+            const clockEl = document.getElementById("liveClock");
+            if (clockEl) clockEl.textContent = `${timeStr} IST`;
         }
-    } catch {
-        statusEl.className = "mb-5 flex items-center justify-center gap-2 text-xs py-1.5 px-3 rounded-full bg-amber-50 text-amber-700 font-medium border border-amber-200";
-        statusEl.innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-amber-500"></span> Server offline`;
-    }
-}
-checkDbStatus();
+        setInterval(updateLiveClock, 1000);
+        updateLiveClock();
 
-// SHOW LOGIN
-function showLogin() {
-    document.getElementById("loginForm").classList.remove("hidden");
-    document.getElementById("registerForm").classList.add("hidden");
+        // Check if redirect query parameter or pending booking exists
+        document.addEventListener("DOMContentLoaded", () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirectParam = urlParams.get('redirect');
+            const pendingBooking = sessionStorage.getItem('pendingBooking');
 
-    document.getElementById("loginTab").className = "w-1/2 py-2.5 font-semibold text-blue-600 border-b-2 border-blue-600 flex items-center justify-center gap-2 transition";
-    document.getElementById("registerTab").className = "w-1/2 py-2.5 font-semibold text-gray-500 hover:text-gray-700 flex items-center justify-center gap-2 transition";
-    document.getElementById("message").textContent = "";
-}
+            if (redirectParam === 'booking' || pendingBooking) {
+                const noticeEl = document.getElementById("redirectNotice");
+                if (noticeEl) noticeEl.classList.remove("hidden");
+            }
 
-// SHOW REGISTER
-function showRegister() {
-    document.getElementById("loginForm").classList.add("hidden");
-    document.getElementById("registerForm").classList.remove("hidden");
-
-    document.getElementById("registerTab").className = "w-1/2 py-2.5 font-semibold text-blue-600 border-b-2 border-blue-600 flex items-center justify-center gap-2 transition";
-    document.getElementById("loginTab").className = "w-1/2 py-2.5 font-semibold text-gray-500 hover:text-gray-700 flex items-center justify-center gap-2 transition";
-    document.getElementById("message").textContent = "";
-}
-
-// REGISTER
-document.getElementById("registerForm").addEventListener("submit", async function(event) {
-    event.preventDefault();
-    const messageEl = document.getElementById("message");
-    messageEl.className = "text-center mt-5 text-sm font-medium text-gray-500";
-    messageEl.textContent = "Registering...";
-
-    const name = document.getElementById("registerName").value.trim();
-    const email = document.getElementById("registerEmail").value.trim();
-    const phone = document.getElementById("registerPhone").value.trim();
-    const password = document.getElementById("registerPassword").value;
-    const role = document.getElementById("registerRole").value;
-
-    try {
-        const response = await fetch(`${API_URL}/register`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, email, phone, password, role })
+            checkDatabaseStatus();
         });
 
-        const data = await response.json();
-        if (response.ok) {
-            messageEl.className = "text-center mt-5 text-sm font-medium text-emerald-600";
-            messageEl.textContent = data.message || "Registration successful! Please login.";
-            document.getElementById("registerForm").reset();
-            setTimeout(showLogin, 1200);
-        } else {
-            messageEl.className = "text-center mt-5 text-sm font-medium text-rose-600";
-            messageEl.textContent = data.error || "Registration failed.";
+        // Toggle Password Visibility
+        function togglePasswordVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (!input || !icon) return;
+
+            if (input.type === "password") {
+                input.type = "text";
+                icon.className = "fa-regular fa-eye-slash text-railblue-600";
+            } else {
+                input.type = "password";
+                icon.className = "fa-regular fa-eye";
+            }
         }
-    } catch (error) {
-        messageEl.className = "text-center mt-5 text-sm font-medium text-rose-600";
-        messageEl.textContent = "Cannot connect to server.";
-    }
-});
 
-// LOGIN
-document.getElementById("loginForm").addEventListener("submit", async function(event) {
-    event.preventDefault();
-    const messageEl = document.getElementById("message");
-    messageEl.className = "text-center mt-5 text-sm font-medium text-gray-500";
-    messageEl.textContent = "Logging in...";
+        // Live Phone Validation & Digit Counter
+        function validatePhoneInput(input) {
+            // Strip any non-digit
+            input.value = input.value.replace(/\D/g, '').slice(0, 10);
+            
+            const hint = document.getElementById("phoneValidationHint");
+            const counter = document.getElementById("phoneDigitCounter");
+            const len = input.value.length;
 
-    const email = document.getElementById("loginEmail").value.trim();
-    const password = document.getElementById("loginPassword").value;
+            if (counter) counter.textContent = `${len}/10 digits`;
 
-    try {
-        const response = await fetch(`${API_URL}/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password })
-        });
+            if (len === 0) {
+                if (hint) {
+                    hint.textContent = "Must start with 6, 7, 8, or 9";
+                    hint.className = "text-slate-400";
+                }
+                return;
+            }
 
-        const data = await response.json();
-        if (response.ok) {
-            messageEl.className = "text-center mt-5 text-sm font-medium text-emerald-600";
-            messageEl.textContent = `Welcome, ${data.user.name}! Redirecting...`;
-            localStorage.setItem("railway_user", JSON.stringify(data.user));
-            setTimeout(() => {
-                window.location.href = "/dashboard";
-            }, 1000);
-        } else {
-            messageEl.className = "text-center mt-5 text-sm font-medium text-rose-600";
-            messageEl.textContent = data.error || "Login failed.";
+            const firstDigit = input.value[0];
+            if (!['6', '7', '8', '9'].includes(firstDigit)) {
+                if (hint) {
+                    hint.textContent = "Invalid: First digit must be 6, 7, 8, or 9";
+                    hint.className = "text-rose-600 font-bold";
+                }
+                return;
+            }
+
+            if (len === 10) {
+                if (hint) {
+                    hint.textContent = "✓ Valid Indian mobile number format";
+                    hint.className = "text-emerald-600 font-bold";
+                }
+            } else {
+                if (hint) {
+                    hint.textContent = `Enter ${10 - len} more digit(s)...`;
+                    hint.className = "text-amber-600";
+                }
+            }
         }
-    } catch (error) {
-        messageEl.className = "text-center mt-5 text-sm font-medium text-rose-600";
-        messageEl.textContent = "Cannot connect to server.";
-    }
-});
-</script>
 
+        // 1-Click Credentials Fill
+        function fillCredentials(type) {
+            showLogin();
+            if (type === 'admin') {
+                document.getElementById("loginEmail").value = "admin@railway.gov.in";
+                document.getElementById("loginPassword").value = "Admin@1234";
+                showStatusMessage("Admin credentials filled: admin@railway.gov.in", "info");
+            } else {
+                document.getElementById("loginEmail").value = "24btcsepy0020@pondiuni.ac.in";
+                document.getElementById("loginPassword").value = "password123";
+                showStatusMessage("Passenger credentials filled: 24btcsepy0020@pondiuni.ac.in", "info");
+            }
+        }
+
+        // Check MySQL Database Status
+        async function checkDatabaseStatus() {
+            const badge = document.getElementById("dbStatusBadge");
+            const text = document.getElementById("dbStatusText");
+            try {
+                const res = await fetch(`${API_URL}/db-status`);
+                const data = await res.json();
+                if (res.ok && data.status === 'connected') {
+                    badge.className = "hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200";
+                    text.textContent = `MySQL Connected (${data.database})`;
+                } else {
+                    badge.className = "hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200";
+                    text.textContent = "MySQL Disconnected";
+                }
+            } catch {
+                badge.className = "hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200";
+                text.textContent = "Server Offline";
+            }
+        }
+
+        // Toggle Tabs
+        function showLogin() {
+            document.getElementById("loginForm").classList.remove("hidden");
+            document.getElementById("registerForm").classList.add("hidden");
+
+            document.getElementById("loginTab").className = "w-1/2 pb-3 font-bold text-sm text-railblue-600 border-b-2 border-railblue-600 flex items-center justify-center gap-2 transition";
+            document.getElementById("registerTab").className = "w-1/2 pb-3 font-bold text-sm text-slate-400 hover:text-slate-600 flex items-center justify-center gap-2 transition";
+            hideStatusMessage();
+        }
+
+        function showRegister() {
+            document.getElementById("loginForm").classList.add("hidden");
+            document.getElementById("registerForm").classList.remove("hidden");
+
+            document.getElementById("registerTab").className = "w-1/2 pb-3 font-bold text-sm text-railblue-600 border-b-2 border-railblue-600 flex items-center justify-center gap-2 transition";
+            document.getElementById("loginTab").className = "w-1/2 pb-3 font-bold text-sm text-slate-400 hover:text-slate-600 flex items-center justify-center gap-2 transition";
+            hideStatusMessage();
+        }
+
+        function showStatusMessage(text, type) {
+            const box = document.getElementById("authMessage");
+            const icon = document.getElementById("authMsgIcon");
+            const msg = document.getElementById("authMsgText");
+            if (!box || !icon || !msg) return;
+
+            box.classList.remove("hidden");
+            msg.textContent = text;
+
+            if (type === 'success') {
+                box.className = "mb-4 p-3 rounded-xl text-xs font-semibold flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200";
+                icon.className = "fa-solid fa-circle-check text-emerald-600";
+            } else if (type === 'error') {
+                box.className = "mb-4 p-3 rounded-xl text-xs font-semibold flex items-center gap-2 bg-rose-50 text-rose-800 border border-rose-200";
+                icon.className = "fa-solid fa-triangle-exclamation text-rose-600";
+            } else {
+                box.className = "mb-4 p-3 rounded-xl text-xs font-semibold flex items-center gap-2 bg-blue-50 text-railblue-800 border border-blue-200";
+                icon.className = "fa-solid fa-circle-info text-railblue-600";
+            }
+        }
+
+        function hideStatusMessage() {
+            const box = document.getElementById("authMessage");
+            if (box) box.classList.add("hidden");
+        }
+
+        // Handle Login Submission
+        async function handleLoginSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById("loginEmail").value.trim();
+            const password = document.getElementById("loginPassword").value;
+            const btn = document.getElementById("loginSubmitBtn");
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...`;
+            showStatusMessage("Verifying credentials against MySQL database...", "info");
+
+            try {
+                const response = await fetch(`${API_URL}/login`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    showStatusMessage(`Welcome back, ${data.user.name}! Redirecting to portal...`, "success");
+                    localStorage.setItem("railway_user", JSON.stringify(data.user));
+
+                    setTimeout(() => {
+                        // Check if returning to booking flow
+                        const pendingBooking = sessionStorage.getItem('pendingBooking');
+                        if (data.user.role === 'Passenger' && pendingBooking) {
+                            window.location.href = "/?resumeBooking=true";
+                            return;
+                        }
+
+                        // Role-based portal routing
+                        if (data.user.role === 'Admin') {
+                            window.location.href = "/admin";
+                        } else {
+                            window.location.href = "/passenger";
+                        }
+                    }, 800);
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In to RailConnect`;
+                    showStatusMessage(data.error || "Authentication failed. Invalid email or password.", "error");
+                }
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In to RailConnect`;
+                showStatusMessage("Network error: Cannot reach authentication server.", "error");
+            }
+        }
+
+        // Handle Registration Submission with Strict 10-Digit Mobile Check
+        async function handleRegisterSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById("regName").value.trim();
+            const email = document.getElementById("regEmail").value.trim();
+            const phone = document.getElementById("regPhone").value.trim();
+            const password = document.getElementById("regPassword").value;
+            const role = document.getElementById("regRole").value;
+            const btn = document.getElementById("regSubmitBtn");
+
+            // Client-side strict validation
+            const phoneRegex = /^[6-9]\d{9}$/;
+            if (!phoneRegex.test(phone)) {
+                showStatusMessage("Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.", "error");
+                document.getElementById("regPhone").focus();
+                return;
+            }
+
+            if (password.length < 6) {
+                showStatusMessage("Password must be at least 6 characters long.", "error");
+                document.getElementById("regPassword").focus();
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Registering...`;
+            showStatusMessage("Registering account in railway database...", "info");
+
+            try {
+                const response = await fetch(`${API_URL}/register`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, email, phone, password, role })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    showStatusMessage(data.message || "Account registered successfully! Please sign in.", "success");
+                    document.getElementById("registerForm").reset();
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fa-solid fa-user-check"></i> Register New Account`;
+
+                    setTimeout(() => {
+                        showLogin();
+                        document.getElementById("loginEmail").value = email;
+                        document.getElementById("loginPassword").focus();
+                    }, 1200);
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fa-solid fa-user-check"></i> Register New Account`;
+                    showStatusMessage(data.error || "Registration rejected by database.", "error");
+                }
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-user-check"></i> Register New Account`;
+                showStatusMessage("Network error: Cannot reach registration endpoint.", "error");
+            }
+        }
+    </script>
 </body>
 </html>

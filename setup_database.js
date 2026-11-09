@@ -1,9 +1,21 @@
-const db = require('./db');
+const mysql = require('mysql2/promise');
+require('dotenv').config();
 
 async function setupDatabase() {
     console.log("Setting up DBMS Railway Reservation schema...");
 
     try {
+        const dbName = process.env.DB_NAME || 'railway_db';
+        const rootConn = await mysql.createConnection({
+            host: process.env.DB_HOST || 'localhost',
+            user: process.env.DB_USER || 'root',
+            password: process.env.DB_PASSWORD || ''
+        });
+        await rootConn.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``);
+        console.log(`✓ Database '${dbName}' verified/created`);
+        await rootConn.end();
+
+        const db = require('./db');
         // 1. Users table (if not exists)
         await db.query(`
             CREATE TABLE IF NOT EXISTS users (
@@ -126,7 +138,16 @@ async function setupDatabase() {
                 ('HWH', 'Howrah Junction', 'Kolkata'),
                 ('PDY', 'Puducherry Railway Station', 'Puducherry'),
                 ('HYB', 'Hyderabad Deccan', 'Hyderabad'),
-                ('ADI', 'Ahmedabad Junction', 'Ahmedabad')
+                ('ADI', 'Ahmedabad Junction', 'Ahmedabad'),
+                ('KPD', 'Katpadi Junction', 'Katpadi'),
+                ('JTJ', 'Jolarpettai Junction', 'Jolarpettai'),
+                ('BZA', 'Vijayawada Junction', 'Vijayawada'),
+                ('NGP', 'Nagpur Junction', 'Nagpur'),
+                ('AGC', 'Agra Cantt', 'Agra'),
+                ('BRC', 'Vadodara Junction', 'Vadodara'),
+                ('ST', 'Surat', 'Surat'),
+                ('VM', 'Villupuram Junction', 'Villupuram'),
+                ('WL', 'Warangal', 'Warangal')
             `);
             console.log("✓ Stations seeded");
         }
@@ -161,6 +182,62 @@ async function setupDatabase() {
                 (16116, 'Second Sitting (2S)', 320, 120.00)
             `);
             console.log("✓ Sample trains and classes seeded");
+        }
+
+        // Seed initial intermediate routes if empty
+        const [routeCount] = await db.query('SELECT COUNT(*) as count FROM routes');
+        if (routeCount[0].count === 0) {
+            console.log("Seeding intermediate train routes...");
+            const [allSt] = await db.query('SELECT station_id, station_code FROM stations');
+            const stMap = {};
+            allSt.forEach(s => { stMap[s.station_code] = s.station_id; });
+
+            const routesData = [
+                // 20607: MAS -> SBC
+                [20607, stMap['MAS'], 1, '05:50:00', '05:50:00', 0],
+                [20607, stMap['KPD'], 2, '07:13:00', '07:15:00', 130],
+                [20607, stMap['JTJ'], 3, '08:23:00', '08:25:00', 214],
+                [20607, stMap['SBC'], 4, '10:20:00', '10:20:00', 362],
+
+                // 12007: MAS -> SBC
+                [12007, stMap['MAS'], 1, '06:00:00', '06:00:00', 0],
+                [12007, stMap['KPD'], 2, '07:38:00', '07:40:00', 130],
+                [12007, stMap['JTJ'], 3, '08:48:00', '08:50:00', 214],
+                [12007, stMap['SBC'], 4, '11:00:00', '11:00:00', 362],
+
+                // 12952: NDLS -> CSTM
+                [12952, stMap['NDLS'], 1, '16:55:00', '16:55:00', 0],
+                [12952, stMap['AGC'], 2, '18:50:00', '18:55:00', 195],
+                [12952, stMap['BRC'], 3, '03:20:00', '03:30:00', 992],
+                [12952, stMap['ST'], 4, '05:10:00', '05:15:00', 1122],
+                [12952, stMap['CSTM'], 5, '08:35:00', '08:35:00', 1384],
+
+                // 12615: MAS -> NDLS
+                [12615, stMap['MAS'], 1, '18:50:00', '18:50:00', 0],
+                [12615, stMap['BZA'], 2, '01:10:00', '01:20:00', 431],
+                [12615, stMap['WL'], 3, '04:15:00', '04:20:00', 638],
+                [12615, stMap['NGP'], 4, '11:30:00', '11:40:00', 1088],
+                [12615, stMap['AGC'], 5, '03:40:00', '03:45:00', 1989],
+                [12615, stMap['NDLS'], 6, '06:35:00', '06:35:00', 2184],
+
+                // 12840: MAS -> HWH
+                [12840, stMap['MAS'], 1, '23:45:00', '23:45:00', 0],
+                [12840, stMap['BZA'], 2, '06:15:00', '06:25:00', 431],
+                [12840, stMap['HWH'], 3, '04:00:00', '04:00:00', 1661],
+
+                // 16116: PDY -> MAS
+                [16116, stMap['PDY'], 1, '05:30:00', '05:30:00', 0],
+                [16116, stMap['VM'], 2, '06:15:00', '06:20:00', 38],
+                [16116, stMap['MAS'], 3, '09:15:00', '09:15:00', 196]
+            ];
+
+            for (const r of routesData) {
+                await db.query(
+                    'INSERT INTO routes (train_number, station_id, stop_number, arrival_time, departure_time, distance_from_source) VALUES (?, ?, ?, ?, ?, ?)',
+                    r
+                );
+            }
+            console.log("✓ Intermediate routes seeded");
         }
 
         console.log("Railway Reservation DBMS schema initialization complete!");

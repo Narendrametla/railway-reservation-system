@@ -11,6 +11,93 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
+// Active sessions in-memory cache
+const activeSessions = new Map();
+
+// Helper to calculate time difference
+function calculateDuration(depTime, arrTime) {
+    if (!depTime || !arrTime) return '4h 00m';
+    try {
+        const [dh, dm] = depTime.split(':').map(Number);
+        const [ah, am] = arrTime.split(':').map(Number);
+        let depMinutes = dh * 60 + dm;
+        let arrMinutes = ah * 60 + am;
+        if (arrMinutes < depMinutes) {
+            arrMinutes += 24 * 60; // Next day arrival
+        }
+        const diff = arrMinutes - depMinutes;
+        const hours = Math.floor(diff / 60);
+        const mins = diff % 60;
+        return `${hours}h ${mins.toString().padStart(2, '0')}m`;
+    } catch {
+        return '4h 30m';
+    }
+}
+
+// Authentication extraction & verification helper
+async function getAuthUser(req) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader ? authHeader.replace(/^Bearer\s+/i, '').trim() : null;
+    if (token && activeSessions.has(token)) {
+        return activeSessions.get(token);
+    }
+
+    const userId = req.headers['x-user-id'] || req.query.userId || req.body?.userId;
+    if (userId) {
+        try {
+            const [rows] = await db.query(
+                'SELECT user_id, name, email, phone, role FROM users WHERE user_id = ?',
+                [userId]
+            );
+            if (rows.length > 0) {
+                return {
+                    userId: rows[0].user_id,
+                    name: rows[0].name,
+                    email: rows[0].email,
+                    phone: rows[0].phone,
+                    role: rows[0].role
+                };
+            }
+        } catch (err) {
+            console.error('Error verifying user:', err.message);
+        }
+    }
+    return null;
+}
+
+// Middleware: Require Authenticated User
+async function requireAuth(req, res, next) {
+    const user = await getAuthUser(req);
+    if (!user) {
+        return res.status(401).json({
+            error: 'Authentication required. Please log in before proceeding.'
+        });
+    }
+    req.user = user;
+    next();
+}
+
+// Middleware: Require Administrator Role
+async function requireAdmin(req, res, next) {
+    const user = await getAuthUser(req);
+    if (!user) {
+        return res.status(401).json({
+            error: 'Authentication required. Please log in as an Administrator.'
+        });
+    }
+    if (user.role !== 'Admin') {
+        return res.status(403).json({
+            error: 'Access denied. Administrator privileges required.'
+        });
+    }
+    req.user = user;
+    next();
+}
+
+// -----------------------------------------------------------------------------
+// PAGE ROUTING: SEPARATE PASSENGER AND ADMIN PORTALS
+// -----------------------------------------------------------------------------
+
 // Landing page route
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
@@ -21,10 +108,24 @@ app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'login.html'));
 });
 
-// Dedicated Dashboard page route
+// Main dashboard router (serves dashboard.html)
 app.get('/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'dashboard.html'));
 });
+
+// Dedicated Passenger portal route
+app.get('/passenger', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dashboard.html'));
+});
+
+// Dedicated Admin portal route
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'dashboard.html'));
+});
+
+// -----------------------------------------------------------------------------
+// AUTHENTICATION APIS (WITH 10-DIGIT MOBILE VALIDATION)
+// -----------------------------------------------------------------------------
 
 // REGISTER
 app.post('/api/register', async (req, res) => {
@@ -32,7 +133,31 @@ app.post('/api/register', async (req, res) => {
 
     if (!name || !email || !password || !phone) {
         return res.status(400).json({
-            error: 'All fields are required.'
+            error: 'All fields (Name, Email, Password, Phone) are required.'
+        });
+    }
+
+    // 10-Digit Mobile Validation
+    const cleanPhone = String(phone).trim().replace(/\D/g, '');
+    const mobileRegex = /^[6-9]\d{9}$/;
+    if (!mobileRegex.test(cleanPhone)) {
+        return res.status(400).json({
+            error: 'Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.'
+        });
+    }
+
+    // Password strength check
+    if (password.length < 6) {
+        return res.status(400).json({
+            error: 'Password must be at least 6 characters long.'
+        });
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({
+            error: 'Please enter a valid email address.'
         });
     }
 
@@ -44,7 +169,7 @@ app.post('/api/register', async (req, res) => {
 
         if (existing.length > 0) {
             return res.status(409).json({
-                error: 'Email already registered.'
+                error: 'Email is already registered. Please login or use a different email.'
             });
         }
 
@@ -52,19 +177,19 @@ app.post('/api/register', async (req, res) => {
         const assignedRole = role === 'Admin' ? 'Admin' : 'Passenger';
 
         const [result] = await db.query(
-            `INSERT INTO users
-            (name, email, password, phone, role)
-            VALUES (?, ?, ?, ?, ?)`,
-            [name, email, hashedPassword, phone, assignedRole]
+            `INSERT INTO users (name, email, password, phone, role)
+             VALUES (?, ?, ?, ?, ?)`,
+            [name.trim(), email.trim(), hashedPassword, cleanPhone, assignedRole]
         );
 
-        // Optional log in system_logs if table exists
         try {
-            await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [`New user registered: ${email}`]);
+            await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [
+                `User registered: ${email.trim()} (${assignedRole})`
+            ]);
         } catch (_) {}
 
         res.status(201).json({
-            message: 'Registration successful!',
+            message: 'Registration successful! You may now login.',
             userId: result.insertId
         });
 
@@ -89,7 +214,7 @@ app.post('/api/login', async (req, res) => {
     try {
         const [rows] = await db.query(
             'SELECT * FROM users WHERE email = ?',
-            [email]
+            [email.trim()]
         );
 
         if (rows.length === 0) {
@@ -99,10 +224,7 @@ app.post('/api/login', async (req, res) => {
         }
 
         const user = rows[0];
-        const isMatch = await bcrypt.compare(
-            password,
-            user.password
-        );
+        const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
             return res.status(401).json({
@@ -110,18 +232,32 @@ app.post('/api/login', async (req, res) => {
             });
         }
 
-        // Optional log in system_logs
+        // Generate session token
+        const token = Buffer.from(`${user.user_id}:${user.role}:${Date.now()}:${Math.random()}`).toString('base64');
+        activeSessions.set(token, {
+            userId: user.user_id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            role: user.role
+        });
+
         try {
-            await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [`User logged in: ${email}`]);
+            await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [
+                `User logged in: ${user.email} (${user.role})`
+            ]);
         } catch (_) {}
 
         res.status(200).json({
             message: 'Login successful!',
+            token: token,
             user: {
                 userId: user.user_id,
                 name: user.name,
                 email: user.email,
-                role: user.role
+                phone: user.phone,
+                role: user.role,
+                token: token
             }
         });
 
@@ -132,6 +268,29 @@ app.post('/api/login', async (req, res) => {
         });
     }
 });
+
+// LOGOUT
+app.post('/api/logout', (req, res) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader ? authHeader.replace(/^Bearer\s+/i, '').trim() : null;
+    if (token) {
+        activeSessions.delete(token);
+    }
+    res.json({ message: 'Logged out successfully.' });
+});
+
+// CURRENT AUTHENTICATED USER SESSION
+app.get('/api/auth/me', async (req, res) => {
+    const user = await getAuthUser(req);
+    if (!user) {
+        return res.status(401).json({ authenticated: false });
+    }
+    res.json({ authenticated: true, user });
+});
+
+// -----------------------------------------------------------------------------
+// STATIONS & TRAIN ROUTES APIS (INTERMEDIATE STOPS SUPPORT)
+// -----------------------------------------------------------------------------
 
 // GET ALL STATIONS
 app.get('/api/stations', async (req, res) => {
@@ -144,7 +303,6 @@ app.get('/api/stations', async (req, res) => {
         console.error('Error fetching stations:', err.message);
     }
 
-    // Default fallback stations if table empty
     res.json([
         { station_id: 1, station_code: 'NDLS', station_name: 'New Delhi Railway Station', city: 'New Delhi' },
         { station_id: 2, station_code: 'MAS', station_name: 'Chennai Central', city: 'Chennai' },
@@ -157,144 +315,186 @@ app.get('/api/stations', async (req, res) => {
     ]);
 });
 
-// SEARCH / GET TRAINS
+// SEARCH TRAINS (SUPPORTS DIRECT & INTERMEDIATE ROUTES)
 app.get('/api/trains', async (req, res) => {
     const { from, to, date } = req.query;
 
     try {
-        let query = `
-            SELECT 
-                t.train_number,
-                t.train_name,
-                t.total_coaches,
-                s1.station_code AS source_code,
-                s1.station_name AS source_name,
-                s1.city AS source_city,
-                s2.station_code AS dest_code,
-                s2.station_name AS dest_name,
-                s2.city AS dest_city
-            FROM trains t
-            JOIN stations s1 ON t.source_station_id = s1.station_id
-            JOIN stations s2 ON t.destination_station_id = s2.station_id
-        `;
-        const params = [];
+        let matchedTrains = [];
 
         if (from && to) {
-            query += ` WHERE (s1.station_code = ? OR s1.city LIKE ?) AND (s2.station_code = ? OR s2.city LIKE ?)`;
-            params.push(from, `%${from}%`, to, `%${to}%`);
+            // Search via intermediate routes table
+            const intermediateQuery = `
+                SELECT 
+                    t.train_number,
+                    t.train_name,
+                    t.total_coaches,
+                    s_from.station_code AS source_code,
+                    s_from.station_name AS source_name,
+                    s_from.city AS source_city,
+                    r_from.departure_time AS departure_time,
+                    r_from.stop_number AS from_stop_number,
+                    r_from.distance_from_source AS from_distance,
+                    s_to.station_code AS dest_code,
+                    s_to.station_name AS dest_name,
+                    s_to.city AS dest_city,
+                    r_to.arrival_time AS arrival_time,
+                    r_to.stop_number AS to_stop_number,
+                    r_to.distance_from_source AS to_distance,
+                    (r_to.distance_from_source - r_from.distance_from_source) AS segment_distance,
+                    s_orig.station_code AS terminal_orig_code,
+                    s_orig.station_name AS terminal_orig_name,
+                    s_dest.station_code AS terminal_dest_code,
+                    s_dest.station_name AS terminal_dest_name
+                FROM trains t
+                JOIN routes r_from ON t.train_number = r_from.train_number
+                JOIN stations s_from ON r_from.station_id = s_from.station_id
+                JOIN routes r_to ON t.train_number = r_to.train_number
+                JOIN stations s_to ON r_to.station_id = s_to.station_id
+                JOIN stations s_orig ON t.source_station_id = s_orig.station_id
+                JOIN stations s_dest ON t.destination_station_id = s_dest.station_id
+                WHERE (s_from.station_code = ? OR s_from.city LIKE ?)
+                  AND (s_to.station_code = ? OR s_to.city LIKE ?)
+                  AND r_from.stop_number < r_to.stop_number
+                ORDER BY r_from.departure_time ASC
+            `;
+            const [routeResults] = await db.query(intermediateQuery, [from, `%${from}%`, to, `%${to}%`]);
+
+            if (routeResults.length > 0) {
+                matchedTrains = routeResults.map(tr => ({
+                    ...tr,
+                    duration: calculateDuration(tr.departure_time, tr.arrival_time),
+                    isIntermediate: (tr.source_code !== tr.terminal_orig_code || tr.dest_code !== tr.terminal_dest_code)
+                }));
+            } else {
+                // Fallback to direct trains table if not found in routes table
+                const directQuery = `
+                    SELECT 
+                        t.train_number,
+                        t.train_name,
+                        t.total_coaches,
+                        s1.station_code AS source_code,
+                        s1.station_name AS source_name,
+                        s1.city AS source_city,
+                        s2.station_code AS dest_code,
+                        s2.station_name AS dest_name,
+                        s2.city AS dest_city
+                    FROM trains t
+                    JOIN stations s1 ON t.source_station_id = s1.station_id
+                    JOIN stations s2 ON t.destination_station_id = s2.station_id
+                    WHERE (s1.station_code = ? OR s1.city LIKE ?) AND (s2.station_code = ? OR s2.city LIKE ?)
+                `;
+                const [directResults] = await db.query(directQuery, [from, `%${from}%`, to, `%${to}%`]);
+                matchedTrains = directResults;
+            }
+        } else {
+            // No filter: Return all trains
+            const allQuery = `
+                SELECT 
+                    t.train_number,
+                    t.train_name,
+                    t.total_coaches,
+                    s1.station_code AS source_code,
+                    s1.station_name AS source_name,
+                    s1.city AS source_city,
+                    s2.station_code AS dest_code,
+                    s2.station_name AS dest_name,
+                    s2.city AS dest_city
+                FROM trains t
+                JOIN stations s1 ON t.source_station_id = s1.station_id
+                JOIN stations s2 ON t.destination_station_id = s2.station_id
+                ORDER BY t.train_number ASC
+            `;
+            const [allTrains] = await db.query(allQuery);
+            matchedTrains = allTrains;
         }
 
-        const [trains] = await db.query(query, params);
-
-        if (trains.length > 0) {
-            // Attach classes for each train
-            for (let train of trains) {
+        if (matchedTrains.length > 0) {
+            // Attach classes and full route schedule to each train
+            for (let train of matchedTrains) {
                 const [classes] = await db.query(
                     'SELECT class_type, total_seats, base_fare FROM train_classes WHERE train_number = ?',
                     [train.train_number]
                 );
                 train.classes = classes;
+
+                const [route] = await db.query(`
+                    SELECT 
+                        r.route_id,
+                        r.stop_number,
+                        s.station_code,
+                        s.station_name,
+                        s.city,
+                        r.arrival_time,
+                        r.departure_time,
+                        r.distance_from_source
+                    FROM routes r
+                    JOIN stations s ON r.station_id = s.station_id
+                    WHERE r.train_number = ?
+                    ORDER BY r.stop_number ASC
+                `, [train.train_number]);
+
+                train.route = route;
+
+                // If departure / arrival time missing, populate from route
+                if (!train.departure_time && route.length > 0) {
+                    train.departure_time = route[0].departure_time;
+                    train.arrival_time = route[route.length - 1].arrival_time;
+                    train.duration = calculateDuration(train.departure_time, train.arrival_time);
+                }
             }
-            return res.json(trains);
+            return res.json(matchedTrains);
         }
     } catch (err) {
         console.error('Error querying trains:', err.message);
     }
 
-    // High quality realistic fallback trains
-    const fallbackTrains = [
-        {
-            train_number: 20607,
-            train_name: 'Vande Bharat Express',
-            source_code: 'MAS',
-            source_name: 'Chennai Central',
-            source_city: 'Chennai',
-            dest_code: 'SBC',
-            dest_name: 'KSR Bengaluru',
-            dest_city: 'Bengaluru',
-            departure_time: '05:50 AM',
-            arrival_time: '10:10 AM',
-            duration: '4h 20m',
-            classes: [
-                { class_type: 'Executive Chair (EC)', total_seats: 52, available: 18, base_fare: 1850.00 },
-                { class_type: 'AC Chair Car (CC)', total_seats: 450, available: 84, base_fare: 950.00 }
-            ]
-        },
-        {
-            train_number: 12952,
-            train_name: 'Mumbai Rajdhani Express',
-            source_code: 'NDLS',
-            source_name: 'New Delhi',
-            source_city: 'New Delhi',
-            dest_code: 'CSTM',
-            dest_name: 'Mumbai CSMT',
-            dest_city: 'Mumbai',
-            departure_time: '04:55 PM',
-            arrival_time: '08:35 AM',
-            duration: '15h 40m',
-            classes: [
-                { class_type: 'First AC (1A)', total_seats: 24, available: 6, base_fare: 3850.00 },
-                { class_type: '2 Tier AC (2A)', total_seats: 120, available: 32, base_fare: 2450.00 },
-                { class_type: '3 Tier AC (3A)', total_seats: 320, available: 75, base_fare: 1680.00 }
-            ]
-        },
-        {
-            train_number: 12007,
-            train_name: 'Shatabdi Express',
-            source_code: 'MAS',
-            source_name: 'Chennai Central',
-            source_city: 'Chennai',
-            dest_code: 'SBC',
-            dest_name: 'KSR Bengaluru',
-            dest_city: 'Bengaluru',
-            departure_time: '06:00 AM',
-            arrival_time: '11:00 AM',
-            duration: '5h 00m',
-            classes: [
-                { class_type: 'Executive Chair (EC)', total_seats: 46, available: 12, base_fare: 1620.00 },
-                { class_type: 'AC Chair Car (CC)', total_seats: 380, available: 62, base_fare: 890.00 }
-            ]
-        },
-        {
-            train_number: 12840,
-            train_name: 'Howrah Mail',
-            source_code: 'MAS',
-            source_name: 'Chennai Central',
-            source_city: 'Chennai',
-            dest_code: 'HWH',
-            dest_name: 'Howrah Junction',
-            dest_city: 'Kolkata',
-            departure_time: '11:45 PM',
-            arrival_time: '04:00 AM (+2)',
-            duration: '28h 15m',
-            classes: [
-                { class_type: '3 Tier AC (3A)', total_seats: 240, available: 41, base_fare: 1450.00 },
-                { class_type: 'Sleeper (SL)', total_seats: 480, available: 112, base_fare: 560.00 }
-            ]
-        },
-        {
-            train_number: 16116,
-            train_name: 'Auroville Intercity Express',
-            source_code: 'PDY',
-            source_name: 'Puducherry',
-            source_city: 'Puducherry',
-            dest_code: 'MAS',
-            dest_name: 'Chennai Central',
-            dest_city: 'Chennai',
-            departure_time: '05:30 AM',
-            arrival_time: '09:15 AM',
-            duration: '3h 45m',
-            classes: [
-                { class_type: 'AC Chair Car (CC)', total_seats: 120, available: 38, base_fare: 395.00 },
-                { class_type: 'Second Sitting (2S)', total_seats: 320, available: 145, base_fare: 120.00 }
-            ]
-        }
-    ];
-
-    res.json(fallbackTrains);
+    // High quality fallback trains if empty
+    res.json([]);
 });
 
+// GET INTERMEDIATE ROUTE SCHEDULE FOR A TRAIN
+app.get('/api/trains/:trainNumber/route', async (req, res) => {
+    const { trainNumber } = req.params;
+
+    try {
+        const [train] = await db.query('SELECT train_number, train_name FROM trains WHERE train_number = ?', [trainNumber]);
+        if (train.length === 0) {
+            return res.status(404).json({ error: 'Train not found.' });
+        }
+
+        const [stops] = await db.query(`
+            SELECT 
+                r.route_id,
+                r.stop_number,
+                s.station_id,
+                s.station_code,
+                s.station_name,
+                s.city,
+                r.arrival_time,
+                r.departure_time,
+                r.distance_from_source
+            FROM routes r
+            JOIN stations s ON r.station_id = s.station_id
+            WHERE r.train_number = ?
+            ORDER BY r.stop_number ASC
+        `, [trainNumber]);
+
+        res.json({
+            trainNumber: train[0].train_number,
+            trainName: train[0].train_name,
+            stops: stops
+        });
+    } catch (err) {
+        console.error('Error fetching train route:', err.message);
+        res.status(500).json({ error: 'Failed to fetch train route schedule.' });
+    }
+});
+
+// -----------------------------------------------------------------------------
 // PNR STATUS INQUIRY
+// -----------------------------------------------------------------------------
+
 app.get('/api/pnr/:pnr', async (req, res) => {
     const { pnr } = req.params;
 
@@ -307,9 +507,15 @@ app.get('/api/pnr/:pnr', async (req, res) => {
                 b.booking_status,
                 t.train_number,
                 t.train_name,
+                s1.station_name AS source,
+                s1.station_code AS source_code,
+                s2.station_name AS destination,
+                s2.station_code AS dest_code,
                 u.name as booked_by
             FROM bookings b
             JOIN trains t ON b.train_number = t.train_number
+            JOIN stations s1 ON t.source_station_id = s1.station_id
+            JOIN stations s2 ON t.destination_station_id = s2.station_id
             JOIN users u ON b.user_id = u.user_id
             WHERE b.pnr_number = ?
         `, [pnr]);
@@ -321,97 +527,121 @@ app.get('/api/pnr/:pnr', async (req, res) => {
                 [pnr]
             );
             booking.passengers = passengers;
+            booking.chart_status = booking.booking_status === 'Confirmed' ? 'CHART PREPARED' : 'CHART NOT PREPARED';
             return res.json(booking);
         }
     } catch (err) {
         console.error('PNR lookup error:', err.message);
     }
 
-    // Realistic PNR fallback for demo/testing
-    const pnrHash = pnr.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const statuses = ['Confirmed', 'Confirmed', 'Confirmed', 'RAC 04'];
-    const status = statuses[pnrHash % statuses.length];
-
-    res.json({
-        pnr_number: pnr,
-        train_number: 20607,
-        train_name: 'Vande Bharat Express',
-        source: 'Chennai Central (MAS)',
-        destination: 'KSR Bengaluru (SBC)',
-        journey_date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0],
-        booking_status: status,
-        chart_status: 'CHART PREPARED',
-        passengers: [
-            {
-                name: 'Passenger 1',
-                age: 28,
-                gender: 'M',
-                seat_number: 'C4-42 (Window)',
-                class_type: 'CC',
-                status: 'CNF'
-            }
-        ],
-        total_fare: 950.00
+    // PNR fallback for testing
+    res.status(404).json({
+        error: 'PNR number not found in database. Please check the 10-digit PNR and try again.'
     });
 });
 
-// BOOK TICKET (DATABASE TRANSACTION)
+// -----------------------------------------------------------------------------
+// TICKET BOOKING (MANDATORY LOGIN ENFORCED)
+// -----------------------------------------------------------------------------
+
 app.post('/api/book', async (req, res) => {
     const { userId, trainNumber, journeyDate, classType, passengers, totalFare } = req.body;
 
-    if (!trainNumber || !journeyDate || !passengers || passengers.length === 0) {
-        return res.status(400).json({ error: 'Incomplete booking details.' });
+    // 1. Mandatory login check: userId must be provided
+    if (!userId) {
+        return res.status(401).json({
+            error: 'Authentication required. Please log in before booking train tickets.'
+        });
     }
 
-    // Generate 10-digit random PNR
-    const pnrNumber = '8' + Math.floor(100000000 + Math.random() * 900000000).toString().substring(0, 9);
-
     try {
-        // Find a valid user_id or use default
-        let actualUserId = userId;
-        if (!actualUserId) {
-            const [firstUser] = await db.query('SELECT user_id FROM users LIMIT 1');
-            actualUserId = firstUser.length > 0 ? firstUser[0].user_id : 1;
+        // Verify user exists in database
+        const [userRows] = await db.query(
+            'SELECT user_id, name, email, phone, role FROM users WHERE user_id = ?',
+            [userId]
+        );
+
+        if (userRows.length === 0) {
+            return res.status(401).json({
+                error: 'Invalid or expired user session. Please log in to complete booking.'
+            });
         }
 
+        const bookingUser = userRows[0];
+
+        // 2. Validate booking payload
+        if (!trainNumber || !journeyDate || !passengers || !Array.isArray(passengers) || passengers.length === 0) {
+            return res.status(400).json({
+                error: 'Incomplete booking details. Train number, journey date, and passengers are required.'
+            });
+        }
+
+        // Validate train exists
+        const [trainCheck] = await db.query('SELECT train_name FROM trains WHERE train_number = ?', [trainNumber]);
+        if (trainCheck.length === 0) {
+            return res.status(404).json({ error: 'Selected train not found.' });
+        }
+
+        // Generate standard 10-digit random PNR starting with 8
+        const pnrNumber = '8' + Math.floor(100000000 + Math.random() * 900000000).toString().substring(0, 9);
+
+        // Insert booking record
         await db.query(`
             INSERT INTO bookings (pnr_number, user_id, train_number, journey_date, total_fare, booking_status)
             VALUES (?, ?, ?, ?, ?, 'Confirmed')
-        `, [pnrNumber, actualUserId, trainNumber, journeyDate, totalFare || 950.00]);
+        `, [pnrNumber, bookingUser.user_id, trainNumber, journeyDate, totalFare || 950.00]);
+
+        // Insert passenger records
+        const assignedClass = classType || 'Standard';
+        const classPrefix = assignedClass.substring(0, 2).trim().toUpperCase();
 
         for (let idx = 0; idx < passengers.length; idx++) {
             const p = passengers[idx];
-            const seatNum = `${classType.substring(0, 2).trim().toUpperCase()}-${10 + idx + Math.floor(Math.random() * 30)}`;
+            const seatNum = `${classPrefix}-${10 + idx + Math.floor(Math.random() * 30)}`;
             await db.query(`
                 INSERT INTO passengers (pnr_number, name, age, gender, seat_number, class_type)
                 VALUES (?, ?, ?, ?, ?, ?)
-            `, [pnrNumber, p.name || 'Passenger', p.age || 25, p.gender || 'M', seatNum, classType]);
+            `, [
+                pnrNumber,
+                p.name || bookingUser.name,
+                parseInt(p.age, 10) || 25,
+                p.gender || 'M',
+                seatNum,
+                assignedClass
+            ]);
         }
 
         try {
-            await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [`New booking PNR ${pnrNumber} confirmed for train ${trainNumber}`]);
+            await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [
+                `Booking confirmed: PNR #${pnrNumber} by ${bookingUser.email} on Train #${trainNumber}`
+            ]);
         } catch (_) {}
 
         res.status(201).json({
             message: 'Booking confirmed successfully!',
             pnr: pnrNumber,
-            status: 'Confirmed'
+            status: 'Confirmed',
+            trainNumber: trainNumber,
+            trainName: trainCheck[0].train_name,
+            totalFare: totalFare || 950.00,
+            bookedBy: bookingUser.name
         });
 
     } catch (err) {
         console.error('Booking error:', err);
-        // Fallback response so front-end booking flow always succeeds nicely
-        res.status(200).json({
-            message: 'Booking simulated successfully!',
-            pnr: pnrNumber,
-            status: 'Confirmed'
+        res.status(500).json({
+            error: 'Failed to process reservation: ' + err.message
         });
     }
 });
 
-// GET USER'S BOOKINGS
+// GET USER'S BOOKINGS (PASSENGER PORTAL)
 app.get('/api/user/bookings/:userId', async (req, res) => {
     const { userId } = req.params;
+
+    if (!userId) {
+        return res.status(400).json({ error: 'User ID is required.' });
+    }
 
     try {
         const [bookings] = await db.query(`
@@ -435,7 +665,6 @@ app.get('/api/user/bookings/:userId', async (req, res) => {
             ORDER BY b.booking_date DESC
         `, [userId]);
 
-        // Attach passenger details for each booking
         for (let b of bookings) {
             const [passengers] = await db.query(
                 'SELECT name, age, gender, seat_number, class_type FROM passengers WHERE pnr_number = ?',
@@ -447,53 +676,56 @@ app.get('/api/user/bookings/:userId', async (req, res) => {
         return res.json(bookings);
     } catch (err) {
         console.error('Error fetching user bookings:', err.message);
+        res.status(500).json({ error: 'Failed to fetch user bookings.' });
     }
-
-    // Fallback sample bookings if query failed or empty
-    res.json([
-        {
-            pnr_number: '8249102847',
-            train_number: 20607,
-            train_name: 'Vande Bharat Express',
-            source_code: 'MAS',
-            source_name: 'Chennai Central',
-            dest_code: 'SBC',
-            dest_name: 'KSR Bengaluru',
-            journey_date: '2026-10-15',
-            booking_date: new Date().toISOString(),
-            total_fare: 950.00,
-            booking_status: 'Confirmed',
-            passengers: [
-                { name: 'Narendra', age: 24, gender: 'Male', seat_number: 'C4-42', class_type: 'AC Chair Car (CC)' }
-            ]
-        }
-    ]);
 });
 
 // CANCEL TICKET
 app.post('/api/cancel-ticket', async (req, res) => {
-    const { pnrNumber } = req.body;
+    const { pnrNumber, userId } = req.body;
 
     if (!pnrNumber) {
         return res.status(400).json({ error: 'PNR number is required.' });
     }
 
     try {
+        const [check] = await db.query('SELECT user_id, booking_status FROM bookings WHERE pnr_number = ?', [pnrNumber]);
+        if (check.length === 0) {
+            return res.status(404).json({ error: 'Booking not found.' });
+        }
+
+        // Check ownership if userId provided
+        if (userId) {
+            const [user] = await db.query('SELECT role FROM users WHERE user_id = ?', [userId]);
+            if (user.length > 0 && user[0].role !== 'Admin' && check[0].user_id != userId) {
+                return res.status(403).json({ error: 'You are not authorized to cancel this booking.' });
+            }
+        }
+
         await db.query('UPDATE bookings SET booking_status = ? WHERE pnr_number = ?', ['Cancelled', pnrNumber]);
-        
+
         try {
-            await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [`Booking PNR ${pnrNumber} cancelled by user`]);
+            await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [
+                `Booking PNR #${pnrNumber} cancelled`
+            ]);
         } catch (_) {}
 
-        res.json({ message: 'Ticket cancelled successfully. Refund initiated to source payment mode.', pnr: pnrNumber });
+        res.json({
+            message: 'Ticket cancelled successfully. Refund initiated to source account.',
+            pnr: pnrNumber
+        });
     } catch (err) {
         console.error('Cancellation error:', err.message);
         res.status(500).json({ error: 'Failed to cancel ticket.' });
     }
 });
 
+// -----------------------------------------------------------------------------
+// ADMIN PORTAL APIS (PROTECTED WITH requireAdmin)
+// -----------------------------------------------------------------------------
+
 // ADMIN STATS
-app.get('/api/admin/stats', async (req, res) => {
+app.get('/api/admin/stats', requireAdmin, async (req, res) => {
     try {
         const [users] = await db.query('SELECT COUNT(*) AS total FROM users');
         const [trains] = await db.query('SELECT COUNT(*) AS total FROM trains');
@@ -510,18 +742,12 @@ app.get('/api/admin/stats', async (req, res) => {
         });
     } catch (err) {
         console.error('Admin stats error:', err.message);
-        res.json({
-            totalUsers: 12,
-            totalTrains: 6,
-            totalStations: 8,
-            totalBookings: 24,
-            totalRevenue: 28450.00
-        });
+        res.status(500).json({ error: 'Failed to calculate admin stats.' });
     }
 });
 
 // ADMIN: GET ALL BOOKINGS
-app.get('/api/admin/all-bookings', async (req, res) => {
+app.get('/api/admin/all-bookings', requireAdmin, async (req, res) => {
     try {
         const [bookings] = await db.query(`
             SELECT 
@@ -538,60 +764,125 @@ app.get('/api/admin/all-bookings', async (req, res) => {
             JOIN trains t ON b.train_number = t.train_number
             JOIN users u ON b.user_id = u.user_id
             ORDER BY b.booking_date DESC
-            LIMIT 50
+            LIMIT 100
         `);
         return res.json(bookings);
     } catch (err) {
         console.error('Admin all bookings error:', err.message);
-        res.json([]);
+        res.status(500).json({ error: 'Failed to retrieve all bookings.' });
     }
 });
 
-// ADMIN: GET SYSTEM LOGS
-app.get('/api/admin/logs', async (req, res) => {
+// ADMIN: GET ALL USERS
+app.get('/api/admin/users', requireAdmin, async (req, res) => {
     try {
-        const [logs] = await db.query('SELECT * FROM system_logs ORDER BY logged_at DESC LIMIT 30');
+        const [users] = await db.query('SELECT user_id, name, email, phone, role, created_at FROM users ORDER BY created_at DESC');
+        res.json(users);
+    } catch (err) {
+        console.error('Admin users error:', err.message);
+        res.status(500).json({ error: 'Failed to retrieve users.' });
+    }
+});
+
+// ADMIN: GET SYSTEM AUDIT LOGS
+app.get('/api/admin/logs', requireAdmin, async (req, res) => {
+    try {
+        const [logs] = await db.query('SELECT * FROM system_logs ORDER BY logged_at DESC LIMIT 50');
         return res.json(logs);
     } catch (err) {
         console.error('Admin logs error:', err.message);
-        res.json([]);
+        res.status(500).json({ error: 'Failed to retrieve system logs.' });
     }
 });
 
 // ADMIN: ADD NEW TRAIN
-app.post('/api/admin/trains', async (req, res) => {
-    const { trainNumber, trainName, sourceStationId, destStationId, totalCoaches } = req.body;
+app.post('/api/admin/trains', requireAdmin, async (req, res) => {
+    const { trainNumber, trainName, sourceStationId, destStationId, totalCoaches, classes } = req.body;
 
     if (!trainNumber || !trainName || !sourceStationId || !destStationId) {
-        return res.status(400).json({ error: 'All fields are required.' });
+        return res.status(400).json({ error: 'Train number, name, source station, and destination station are required.' });
     }
 
     try {
         await db.query(`
             INSERT INTO trains (train_number, train_name, source_station_id, destination_station_id, total_coaches)
             VALUES (?, ?, ?, ?, ?)
-        `, [trainNumber, trainName, sourceStationId, destStationId, totalCoaches || 18]);
+        `, [trainNumber, trainName.trim(), sourceStationId, destStationId, totalCoaches || 18]);
+
+        // Automatically initialize terminal route stops in routes table
+        await db.query(`
+            INSERT INTO routes (train_number, station_id, stop_number, arrival_time, departure_time, distance_from_source)
+            VALUES 
+                (?, ?, 1, '06:00:00', '06:00:00', 0),
+                (?, ?, 2, '12:00:00', '12:00:00', 350)
+        `, [trainNumber, sourceStationId, trainNumber, destStationId]);
+
+        // Add standard classes if provided or default
+        const trainClasses = Array.isArray(classes) && classes.length > 0 ? classes : [
+            { class_type: 'AC Chair Car (CC)', total_seats: 250, base_fare: 750 },
+            { class_type: 'Sleeper (SL)', total_seats: 400, base_fare: 420 }
+        ];
+
+        for (const c of trainClasses) {
+            await db.query(`
+                INSERT INTO train_classes (train_number, class_type, total_seats, base_fare)
+                VALUES (?, ?, ?, ?)
+            `, [trainNumber, c.class_type, c.total_seats || 200, c.base_fare || 500]);
+        }
 
         try {
-            await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [`New train created: #${trainNumber} - ${trainName}`]);
+            await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [
+                `New train created: #${trainNumber} - ${trainName.trim()}`
+            ]);
         } catch (_) {}
 
-        res.status(201).json({ message: 'Train added successfully!' });
+        res.status(201).json({ message: 'Train and routes added successfully!' });
     } catch (err) {
         console.error('Add train error:', err.message);
         res.status(500).json({ error: 'Failed to add train: ' + err.message });
     }
 });
 
+// ADMIN: EDIT TRAIN
+app.put('/api/admin/trains/:trainNumber', requireAdmin, async (req, res) => {
+    const { trainNumber } = req.params;
+    const { trainName, sourceStationId, destStationId, totalCoaches } = req.body;
+
+    if (!trainName || !sourceStationId || !destStationId) {
+        return res.status(400).json({ error: 'Train name, source station, and destination station are required.' });
+    }
+
+    try {
+        await db.query(`
+            UPDATE trains 
+            SET train_name = ?, source_station_id = ?, destination_station_id = ?, total_coaches = ?
+            WHERE train_number = ?
+        `, [trainName.trim(), sourceStationId, destStationId, totalCoaches || 18, trainNumber]);
+
+        try {
+            await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [
+                `Train updated: #${trainNumber} - ${trainName.trim()}`
+            ]);
+        } catch (_) {}
+
+        res.json({ message: 'Train updated successfully!' });
+    } catch (err) {
+        console.error('Update train error:', err.message);
+        res.status(500).json({ error: 'Failed to update train: ' + err.message });
+    }
+});
+
 // ADMIN: DELETE TRAIN
-app.delete('/api/admin/trains/:trainNumber', async (req, res) => {
+app.delete('/api/admin/trains/:trainNumber', requireAdmin, async (req, res) => {
     const { trainNumber } = req.params;
 
     try {
         await db.query('DELETE FROM trains WHERE train_number = ?', [trainNumber]);
-        
+
         try {
-            await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [`Train deleted: #${trainNumber}`]);
+            await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [
+                `Train deleted: #${trainNumber}`
+            ]);
         } catch (_) {}
 
         res.json({ message: 'Train deleted successfully!' });
@@ -601,7 +892,117 @@ app.delete('/api/admin/trains/:trainNumber', async (req, res) => {
     }
 });
 
+// ADMIN: GET INTERMEDIATE STOPS FOR A TRAIN
+app.get('/api/admin/trains/:trainNumber/routes', requireAdmin, async (req, res) => {
+    const { trainNumber } = req.params;
+    try {
+        const [stops] = await db.query(`
+            SELECT 
+                r.route_id,
+                r.stop_number,
+                s.station_id,
+                s.station_code,
+                s.station_name,
+                s.city,
+                r.arrival_time,
+                r.departure_time,
+                r.distance_from_source
+            FROM routes r
+            JOIN stations s ON r.station_id = s.station_id
+            WHERE r.train_number = ?
+            ORDER BY r.stop_number ASC
+        `, [trainNumber]);
+        res.json(stops);
+    } catch (err) {
+        console.error('Error fetching admin train stops:', err.message);
+        res.status(500).json({ error: 'Failed to fetch train stops.' });
+    }
+});
+
+// ADMIN: ADD INTERMEDIATE STOP TO A TRAIN ROUTE
+app.post('/api/admin/trains/:trainNumber/routes', requireAdmin, async (req, res) => {
+    const { trainNumber } = req.params;
+    const { stationId, stopNumber, arrivalTime, departureTime, distanceFromSource } = req.body;
+
+    if (!stationId || !stopNumber) {
+        return res.status(400).json({ error: 'Station and stop number are required.' });
+    }
+
+    try {
+        await db.query(`
+            INSERT INTO routes (train_number, station_id, stop_number, arrival_time, departure_time, distance_from_source)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `, [
+            trainNumber,
+            stationId,
+            stopNumber,
+            arrivalTime || '08:00:00',
+            departureTime || '08:05:00',
+            distanceFromSource || 100
+        ]);
+
+        try {
+            await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [
+                `Stop added to Train #${trainNumber} at station #${stationId} (Stop #${stopNumber})`
+            ]);
+        } catch (_) {}
+
+        res.status(201).json({ message: 'Intermediate stop added successfully!' });
+    } catch (err) {
+        console.error('Error adding intermediate route stop:', err.message);
+        res.status(500).json({ error: 'Failed to add intermediate stop: ' + err.message });
+    }
+});
+
+// ADMIN: MODIFY INTERMEDIATE ROUTE TIMINGS & DISTANCE
+app.put('/api/admin/routes/:routeId', requireAdmin, async (req, res) => {
+    const { routeId } = req.params;
+    const { arrivalTime, departureTime, stopNumber, distanceFromSource } = req.body;
+
+    try {
+        await db.query(`
+            UPDATE routes 
+            SET arrival_time = ?, departure_time = ?, stop_number = ?, distance_from_source = ?
+            WHERE route_id = ?
+        `, [arrivalTime, departureTime, stopNumber, distanceFromSource, routeId]);
+
+        try {
+            await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [
+                `Route stop #${routeId} timing modified`
+            ]);
+        } catch (_) {}
+
+        res.json({ message: 'Route stop timing modified successfully!' });
+    } catch (err) {
+        console.error('Error updating route timing:', err.message);
+        res.status(500).json({ error: 'Failed to update route timing: ' + err.message });
+    }
+});
+
+// ADMIN: DELETE INTERMEDIATE STOP
+app.delete('/api/admin/routes/:routeId', requireAdmin, async (req, res) => {
+    const { routeId } = req.params;
+
+    try {
+        await db.query('DELETE FROM routes WHERE route_id = ?', [routeId]);
+
+        try {
+            await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [
+                `Route stop #${routeId} removed`
+            ]);
+        } catch (_) {}
+
+        res.json({ message: 'Route stop removed successfully!' });
+    } catch (err) {
+        console.error('Error removing route stop:', err.message);
+        res.status(500).json({ error: 'Failed to remove route stop: ' + err.message });
+    }
+});
+
+// -----------------------------------------------------------------------------
 // DATABASE HEALTH CHECK
+// -----------------------------------------------------------------------------
+
 app.get('/api/db-status', async (req, res) => {
     try {
         const [rows] = await db.query('SELECT DATABASE() as db_name, 1 as status');
@@ -620,7 +1021,10 @@ app.get('/api/db-status', async (req, res) => {
     }
 });
 
+// -----------------------------------------------------------------------------
 // START SERVER
+// -----------------------------------------------------------------------------
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, async () => {
