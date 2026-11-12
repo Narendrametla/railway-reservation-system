@@ -1,6 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Instant Theme Detection to prevent FOUC -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('railway_portal_theme');
+            const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RailConnect &bull; Passenger & Admin Authentication</title>
@@ -8,31 +21,49 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        navy: {
-                            800: '#123B65',
-                            900: '#0C2340',
-                            950: '#081729'
-                        },
                         railblue: {
                             50: '#F0F6FC',
                             100: '#E1EDF8',
                             500: '#1E88E5',
-                            600: '#1769AA',
-                            700: '#125287'
+                            600: '#1E3A8A', // Deep Railway Blue
+                            700: '#172554',
+                            800: '#1E3A8A',
+                            900: '#0C2340',
+                            950: '#081729'
                         },
                         saffron: {
-                            500: '#F28C28',
-                            600: '#E07817'
+                            400: '#FB923C',
+                            500: '#F97316', // Saffron Accent CTA
+                            600: '#EA580C',
+                            700: '#C2410C'
                         },
                         railgreen: {
-                            600: '#16804A'
+                            500: '#22C55E',
+                            600: '#16A34A',
+                            700: '#15803D'
+                        },
+                        railamber: {
+                            500: '#F59E0B',
+                            600: '#D97706'
+                        },
+                        darkslate: {
+                            800: '#1E293B',
+                            850: '#0F172A',
+                            900: '#0B1120',
+                            950: '#060C16'
                         }
                     },
                     fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    },
+                    borderRadius: {
+                        'xl': '12px',
+                        'lg': '8px'
                     }
                 }
             }
@@ -40,370 +71,463 @@
     </script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- Google Fonts -->
+    <!-- Google Fonts Inter & JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .font-mono { font-family: 'JetBrains Mono', monospace; }
-        .irctc-pattern {
-            background-color: #F3F6FA;
-            background-image: radial-gradient(#1769AA 0.5px, transparent 0.5px), radial-gradient(#1769AA 0.5px, #F3F6FA 0.5px);
-            background-size: 20px 20px;
-            background-position: 0 0, 10px 10px;
-            background-opacity: 0.05;
+        body { font-family: 'Inter', sans-serif; }
+        .font-tabular { font-variant-numeric: tabular-nums; }
+        .rail-grid-pattern {
+            background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+            background-size: 24px 24px;
         }
     </style>
 </head>
 
-<body class="bg-[#F3F6FA] text-[#1F2937] min-h-screen flex flex-col justify-between selection:bg-railblue-600 selection:text-white">
+<body class="bg-[#F8FAFC] dark:bg-darkslate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col selection:bg-railblue-600 selection:text-white transition-colors duration-200">
 
     <!-- ============================================== -->
-    <!-- 1. TOP UTILITY BAR                             -->
+    <!-- TOP UTILITY STRIP                              -->
     <!-- ============================================== -->
-    <div class="bg-[#123B65] text-white text-xs py-1.5 px-4 sm:px-8 border-b border-white/10">
+    <div class="bg-[#0C2340] dark:bg-darkslate-950 text-white text-xs py-2 px-4 sm:px-8 border-b border-white/10 shrink-0">
         <div class="max-w-7xl mx-auto flex items-center justify-between">
             <div class="flex items-center gap-4 sm:gap-6">
-                <span class="flex items-center gap-1.5 font-medium text-slate-200">
+                <span class="flex items-center gap-1.5 font-medium text-slate-300">
                     <i class="fa-regular fa-clock text-saffron-500"></i>
-                    <span id="liveClock" class="font-mono">--:--:-- IST</span>
+                    <span id="liveClock" class="font-tabular font-mono text-[11px]">--:--:-- IST</span>
                 </span>
-                <span class="hidden sm:flex items-center gap-1.5 text-slate-300">
+                <span class="hidden sm:flex items-center gap-1.5 text-slate-300 text-[11px]">
                     <i class="fa-solid fa-phone text-saffron-500"></i>
-                    <span>Railway Helpline: <strong class="text-white font-bold">139</strong></span>
+                    <span>Passenger Helpline: <strong class="text-white font-bold font-mono">139</strong></span>
                 </span>
             </div>
 
-            <div class="flex items-center gap-4 text-[11px]">
-                <a href="/" class="hover:text-saffron-500 transition flex items-center gap-1">
-                    <i class="fa-solid fa-house"></i>
-                    <span>Home</span>
-                </a>
-                <span class="text-white/30">|</span>
-                <a href="/login" class="text-saffron-500 font-bold flex items-center gap-1">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    <span>Portal Gateway</span>
+            <div class="flex items-center gap-4 text-xs">
+                <!-- Theme Toggle -->
+                <button type="button" onclick="togglePortalTheme()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-white/20 bg-white/10 hover:bg-white/20 text-slate-200 text-[11px] font-semibold transition" title="Toggle Light / Dark Mode">
+                    <i class="fa-solid fa-moon text-amber-400 theme-toggle-icon"></i>
+                    <span class="theme-toggle-text hidden sm:inline">Dark</span>
+                </button>
+                <span class="text-white/20">|</span>
+                <a href="/" class="hover:text-saffron-400 transition flex items-center gap-1 text-[11px] font-semibold text-slate-200">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Back to Portal</span>
                 </a>
             </div>
         </div>
     </div>
 
     <!-- ============================================== -->
-    <!-- 2. MAIN HEADER & BRANDING                      -->
+    <!-- SPLIT-SCREEN AUTHENTICATION CONTAINER          -->
     <!-- ============================================== -->
-    <header class="bg-white border-b border-slate-200 py-3.5 px-4 sm:px-8 shadow-sm">
-        <div class="max-w-7xl mx-auto flex items-center justify-between">
-            <a href="/" class="flex items-center gap-3 group">
-                <div class="w-11 h-11 rounded-xl bg-[#123B65] text-white flex items-center justify-center shadow-md group-hover:bg-[#1769AA] transition">
-                    <i class="fa-solid fa-train-subway text-xl text-saffron-500"></i>
-                </div>
-                <div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xl sm:text-2xl font-black text-[#123B65] tracking-tight">Rail<span class="text-saffron-500">Connect</span></span>
-                        <span class="text-[9px] bg-blue-50 text-railblue-700 font-extrabold uppercase px-2 py-0.5 rounded border border-railblue-200">Official Portal</span>
-                    </div>
-                    <span class="text-[10px] sm:text-xs text-slate-500 block font-medium">Indian Railway Reservation System &bull; Academic Project</span>
-                </div>
-            </a>
+    <main class="flex-1 flex flex-col lg:grid lg:grid-cols-12 min-h-0">
 
-            <div class="flex items-center gap-3">
-                <div id="dbStatusBadge" class="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span id="dbStatusText">Checking MySQL...</span>
-                </div>
-                <a href="/" class="text-xs font-bold text-railblue-600 hover:text-railblue-700 border border-slate-300 hover:border-railblue-500 px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-arrow-left"></i>
-                    <span>Back to Portal</span>
+        <!-- LEFT COLUMN: BRANDING & TRAVEL SHOWCASE (Desktop) -->
+        <div class="lg:col-span-5 bg-gradient-to-br from-[#0C2340] via-[#1E3A8A] to-[#0A1A30] text-white p-6 sm:p-10 lg:p-12 flex flex-col justify-between relative overflow-hidden shrink-0">
+            <!-- Background Decoration -->
+            <div class="absolute inset-0 rail-grid-pattern pointer-events-none opacity-40"></div>
+            <div class="absolute -right-20 -bottom-20 w-80 h-80 rounded-full bg-saffron-500/10 blur-3xl pointer-events-none"></div>
+            <div class="absolute -left-20 -top-20 w-80 h-80 rounded-full bg-blue-500/10 blur-3xl pointer-events-none"></div>
+
+            <!-- Top Brand -->
+            <div class="relative z-10">
+                <a href="/" class="inline-flex items-center gap-3 group">
+                    <div class="w-12 h-12 rounded-xl bg-white/10 backdrop-blur-md text-white flex items-center justify-center border border-white/20 shadow-md group-hover:bg-white/20 transition">
+                        <i class="fa-solid fa-train-subway text-2xl text-saffron-500"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl font-black tracking-tight">Rail<span class="text-saffron-500">Connect</span></span>
+                            <span class="text-[9px] bg-white/15 text-sky-200 font-extrabold uppercase px-2 py-0.5 rounded border border-white/20">Official Portal</span>
+                        </div>
+                        <span class="text-xs text-slate-300 block font-medium">Indian Railway Reservation System</span>
+                    </div>
                 </a>
+
+                <!-- Hero Pitch -->
+                <div class="mt-10 sm:mt-14 space-y-3">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-saffron-500/20 border border-saffron-500/30 text-saffron-300 text-xs font-bold uppercase tracking-wider">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <span>Secure Express Gateway</span>
+                    </div>
+                    <h1 class="text-2xl sm:text-3xl lg:text-4xl font-black leading-tight tracking-tight">
+                        Seamless Rail Travel & Real-Time Management
+                    </h1>
+                    <p class="text-sm text-slate-300 max-w-md leading-relaxed">
+                        Access confirmed e-tickets, intermediate timetable schedules, live PNR inquiries, and complete operational fleet management.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Trust Highlights Grid -->
+            <div class="relative z-10 my-8 sm:my-10 space-y-3.5 max-w-md">
+                <div class="flex items-center gap-3.5 p-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/15">
+                    <div class="w-9 h-9 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm shrink-0 border border-emerald-500/30">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-white">Instant Seat Allocation</div>
+                        <div class="text-[11px] text-slate-300">Live inventory across 1A, 2A, 3A, SL & CC coaches</div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3.5 p-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/15">
+                    <div class="w-9 h-9 rounded-lg bg-saffron-500/20 text-saffron-400 flex items-center justify-center text-sm shrink-0 border border-saffron-500/30">
+                        <i class="fa-solid fa-credit-card"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-white">Razorpay Secure Integration</div>
+                        <div class="text-[11px] text-slate-300">Unified UPI, Cards & Netbanking with instant verification</div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3.5 p-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/15">
+                    <div class="w-9 h-9 rounded-lg bg-blue-500/20 text-sky-400 flex items-center justify-center text-sm shrink-0 border border-blue-500/30">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-white">Role-Based Access Control</div>
+                        <div class="text-[11px] text-slate-300">Dedicated passenger workspace and admin fleet cockpit</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Left Info -->
+            <div class="relative z-10 pt-4 border-t border-white/15 flex items-center justify-between text-[11px] text-slate-400">
+                <span>DBMS Relational Architecture</span>
+                <span class="flex items-center gap-1.5 text-emerald-400 font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    256-Bit SSL Protected
+                </span>
             </div>
         </div>
-    </header>
 
-    <!-- ============================================== -->
-    <!-- 3. AUTHENTICATION CONTAINER                    -->
-    <!-- ============================================== -->
-    <main class="flex-1 flex items-center justify-center py-10 px-4 sm:px-6 relative">
-        <div class="w-full max-w-md">
+        <!-- RIGHT COLUMN: AUTHENTICATION FORMS -->
+        <div class="lg:col-span-7 flex flex-col justify-center items-center p-6 sm:p-10 lg:p-12 relative overflow-y-auto">
+            
+            <div class="w-full max-w-md space-y-5">
 
-            <!-- Security Notice Banner -->
-            <div id="redirectNotice" class="hidden mb-4 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-2.5 shadow-sm">
-                <i class="fa-solid fa-circle-exclamation text-amber-600 text-sm mt-0.5"></i>
-                <div>
-                    <strong class="font-bold block">Login Required to Continue Booking</strong>
-                    <span>Sign in to complete your reservation. Your selected train and journey parameters are preserved.</span>
-                </div>
-            </div>
-
-            <!-- Quick Demo Credentials Box -->
-            <div class="mb-4 bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm text-xs">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="font-bold text-[#123B65] flex items-center gap-1.5">
-                        <i class="fa-solid fa-key text-saffron-500"></i>
-                        <span>1-Click Test Credentials:</span>
-                    </span>
-                    <span class="text-[10px] text-slate-400 font-mono">Demo Fill</span>
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <button type="button" onclick="fillCredentials('passenger')" class="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-railblue-700 font-bold rounded-lg border border-blue-200 text-center transition flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-user text-xs"></i> Passenger
-                    </button>
-                    <button type="button" onclick="fillCredentials('admin')" class="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-lg border border-amber-200 text-center transition flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-user-shield text-xs"></i> Administrator
-                    </button>
-                </div>
-            </div>
-
-            <!-- Main Auth Card -->
-            <div class="bg-white rounded-2xl shadow-xl border border-slate-200/90 overflow-hidden">
-                
-                <!-- Card Header with IRCTC Tri-Color Accent -->
-                <div class="h-1.5 bg-gradient-to-r from-saffron-500 via-white to-railgreen-600"></div>
-
-                <div class="p-6 sm:p-8">
-
-                    <!-- Portal Tabs -->
-                    <div class="flex border-b border-slate-200 mb-6">
-                        <button
-                            id="loginTab"
-                            onclick="showLogin()"
-                            class="w-1/2 pb-3 font-bold text-sm text-railblue-600 border-b-2 border-railblue-600 flex items-center justify-center gap-2 transition">
-                            <i class="fa-solid fa-right-to-bracket"></i>
-                            <span>Sign In</span>
-                        </button>
-                        <button
-                            id="registerTab"
-                            onclick="showRegister()"
-                            class="w-1/2 pb-3 font-bold text-sm text-slate-400 hover:text-slate-600 flex items-center justify-center gap-2 transition">
-                            <i class="fa-solid fa-user-plus"></i>
-                            <span>Register</span>
-                        </button>
+                <!-- Top Status Header (Mobile & Desktop) -->
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Authentication</span>
+                        <h2 class="text-2xl font-black text-[#1E3A8A] dark:text-white tracking-tight">Portal Access</h2>
                     </div>
 
-                    <!-- Status Message Box -->
-                    <div id="authMessage" class="hidden mb-4 p-3 rounded-xl text-xs font-semibold flex items-center gap-2">
-                        <i id="authMsgIcon" class="fa-solid fa-circle-info"></i>
-                        <span id="authMsgText"></span>
+                    <!-- DB Status Badge -->
+                    <div id="dbStatusBadge" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span id="dbStatusText">Checking MySQL...</span>
+                    </div>
+                </div>
+
+                <!-- Redirect Booking Notice Banner -->
+                <div id="redirectNotice" class="hidden p-3.5 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded-xl text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2.5 shadow-sm">
+                    <i class="fa-solid fa-circle-exclamation text-amber-600 dark:text-amber-400 text-sm mt-0.5 shrink-0"></i>
+                    <div>
+                        <strong class="font-bold block">Login Required to Continue Booking</strong>
+                        <span>Please sign in to complete your reservation. Your selected train and passenger parameters have been saved.</span>
+                    </div>
+                </div>
+
+                <!-- Quick Demo Credentials Box -->
+                <div class="bg-white dark:bg-darkslate-900 p-4 rounded-xl border border-slate-200 dark:border-darkslate-800 shadow-sm text-xs space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-[#1E3A8A] dark:text-sky-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-key text-saffron-500"></i>
+                            <span>1-Click Test Credentials:</span>
+                        </span>
+                        <span class="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Demo Auto-Fill</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" onclick="fillCredentials('passenger')" class="px-3 py-2 bg-blue-50 dark:bg-railblue-950/50 hover:bg-blue-100 dark:hover:bg-railblue-900/60 text-railblue-700 dark:text-sky-300 font-bold rounded-lg border border-blue-200 dark:border-blue-900/60 text-center transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-user text-xs"></i> Passenger Demo
+                        </button>
+                        <button type="button" onclick="fillCredentials('admin')" class="px-3 py-2 bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 font-bold rounded-lg border border-amber-200 dark:border-amber-900/60 text-center transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-user-shield text-xs"></i> Admin Demo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Main Auth Card -->
+                <div class="bg-white dark:bg-darkslate-900 rounded-xl shadow-lg border border-slate-200/90 dark:border-darkslate-800 overflow-hidden">
+                    
+                    <!-- Top IRCTC Tri-Color Accent -->
+                    <div class="h-1 bg-gradient-to-r from-saffron-500 via-white to-railgreen-600"></div>
+
+                    <div class="p-6 sm:p-8">
+
+                        <!-- Tab Switcher -->
+                        <div class="flex border-b border-slate-200 dark:border-darkslate-800 mb-6">
+                            <button
+                                id="loginTab"
+                                onclick="showLogin()"
+                                class="w-1/2 pb-3 font-bold text-sm text-railblue-600 dark:text-sky-400 border-b-2 border-railblue-600 dark:border-sky-400 flex items-center justify-center gap-2 transition">
+                                <i class="fa-solid fa-right-to-bracket"></i>
+                                <span>Sign In</span>
+                            </button>
+                            <button
+                                id="registerTab"
+                                onclick="showRegister()"
+                                class="w-1/2 pb-3 font-bold text-sm text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 flex items-center justify-center gap-2 transition">
+                                <i class="fa-solid fa-user-plus"></i>
+                                <span>Register</span>
+                            </button>
+                        </div>
+
+                        <!-- Status Message Box -->
+                        <div id="authMessage" class="hidden mb-4 p-3 rounded-lg text-xs font-semibold flex items-center gap-2.5">
+                            <i id="authMsgIcon" class="fa-solid fa-circle-info shrink-0"></i>
+                            <span id="authMsgText"></span>
+                        </div>
+
+                        <!-- ------------------------------------------ -->
+                        <!-- FORM 1: LOGIN                              -->
+                        <!-- ------------------------------------------ -->
+                        <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+                                    Email Address <span class="text-rose-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                        <i class="fa-regular fa-envelope text-sm"></i>
+                                    </span>
+                                    <input
+                                        type="email"
+                                        id="loginEmail"
+                                        required
+                                        class="w-full bg-slate-50 dark:bg-darkslate-850 border border-slate-300 dark:border-darkslate-700 pl-10 pr-4 py-2.5 rounded-lg text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-railblue-600 focus:outline-none transition"
+                                        placeholder="e.g. 24btcsepy0020@pondiuni.ac.in">
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <label class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                                        Password <span class="text-rose-500">*</span>
+                                    </label>
+                                    <a href="javascript:void(0)" onclick="alert('For project demonstration:\n• Passenger: password123\n• Admin: Admin@1234')" class="text-[11px] font-semibold text-railblue-600 dark:text-sky-400 hover:underline">
+                                        Demo Passwords?
+                                    </a>
+                                </div>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                        <i class="fa-solid fa-lock text-sm"></i>
+                                    </span>
+                                    <input
+                                        type="password"
+                                        id="loginPassword"
+                                        required
+                                        class="w-full bg-slate-50 dark:bg-darkslate-850 border border-slate-300 dark:border-darkslate-700 pl-10 pr-11 py-2.5 rounded-lg text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-railblue-600 focus:outline-none transition"
+                                        placeholder="Enter account password">
+                                    <button
+                                        type="button"
+                                        onclick="togglePasswordVisibility('loginPassword', 'loginEyeIcon')"
+                                        class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-none"
+                                        title="Toggle password view">
+                                        <i id="loginEyeIcon" class="fa-regular fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between text-xs pt-1">
+                                <label class="flex items-center gap-2 cursor-pointer text-slate-600 dark:text-slate-400">
+                                    <input type="checkbox" id="rememberMe" checked class="rounded border-slate-300 dark:border-slate-700 text-railblue-600 focus:ring-railblue-500">
+                                    <span>Remember account</span>
+                                </label>
+                                <span class="text-slate-400 dark:text-slate-500 text-[11px]">Bcrypt SHA-256</span>
+                            </div>
+
+                            <button
+                                type="submit"
+                                id="loginSubmitBtn"
+                                class="w-full bg-[#1E3A8A] hover:bg-[#172554] text-white font-bold py-3 rounded-lg shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 text-sm mt-3">
+                                <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                                <span>Sign In to RailConnect</span>
+                            </button>
+                        </form>
+
+                        <!-- ------------------------------------------ -->
+                        <!-- FORM 2: REGISTRATION                       -->
+                        <!-- ------------------------------------------ -->
+                        <form id="registerForm" onsubmit="handleRegisterSubmit(event)" class="hidden space-y-3.5">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+                                    Full Name <span class="text-rose-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                        <i class="fa-regular fa-user text-sm"></i>
+                                    </span>
+                                    <input
+                                        type="text"
+                                        id="regName"
+                                        required
+                                        class="w-full bg-slate-50 dark:bg-darkslate-850 border border-slate-300 dark:border-darkslate-700 pl-10 pr-4 py-2.5 rounded-lg text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-railblue-600 focus:outline-none"
+                                        placeholder="e.g. Narendra Sharma">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+                                    Email Address <span class="text-rose-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                        <i class="fa-regular fa-envelope text-sm"></i>
+                                    </span>
+                                    <input
+                                        type="email"
+                                        id="regEmail"
+                                        required
+                                        class="w-full bg-slate-50 dark:bg-darkslate-850 border border-slate-300 dark:border-darkslate-700 pl-10 pr-4 py-2.5 rounded-lg text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-railblue-600 focus:outline-none"
+                                        placeholder="e.g. passenger@domain.com">
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <label class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                                        Mobile Number <span class="text-rose-500">*</span>
+                                    </label>
+                                    <span class="text-[10px] text-railblue-600 dark:text-sky-400 font-bold bg-blue-50 dark:bg-railblue-950/60 px-2 py-0.5 rounded border border-blue-100 dark:border-blue-900/60">Strict 10 Digits (6-9)</span>
+                                </div>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 dark:text-slate-400 font-mono text-xs font-bold border-r border-slate-200 dark:border-darkslate-700 pr-2">
+                                        +91
+                                    </span>
+                                    <input
+                                        type="tel"
+                                        id="regPhone"
+                                        required
+                                        maxlength="10"
+                                        pattern="[6-9][0-9]{9}"
+                                        oninput="validatePhoneInput(this)"
+                                        class="w-full bg-slate-50 dark:bg-darkslate-850 border border-slate-300 dark:border-darkslate-700 pl-14 pr-4 py-2.5 rounded-lg text-sm font-mono font-bold text-slate-900 dark:text-white focus:ring-2 focus:ring-railblue-600 focus:outline-none"
+                                        placeholder="9876543210">
+                                </div>
+                                <div class="flex items-center justify-between mt-1 text-[10px]">
+                                    <span id="phoneValidationHint" class="text-slate-400">Must start with 6, 7, 8, or 9</span>
+                                    <span id="phoneDigitCounter" class="text-slate-400 font-mono">0/10 digits</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+                                    Password (Min. 6 characters) <span class="text-rose-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+                                        <i class="fa-solid fa-lock text-sm"></i>
+                                    </span>
+                                    <input
+                                        type="password"
+                                        id="regPassword"
+                                        required
+                                        minlength="6"
+                                        class="w-full bg-slate-50 dark:bg-darkslate-850 border border-slate-300 dark:border-darkslate-700 pl-10 pr-11 py-2.5 rounded-lg text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-railblue-600 focus:outline-none"
+                                        placeholder="Create strong password">
+                                    <button
+                                        type="button"
+                                        onclick="togglePasswordVisibility('regPassword', 'regEyeIcon')"
+                                        class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 focus:outline-none">
+                                        <i id="regEyeIcon" class="fa-regular fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+                                    Account Role <span class="text-rose-500">*</span>
+                                </label>
+                                <select
+                                    id="regRole"
+                                    class="w-full bg-slate-50 dark:bg-darkslate-850 border border-slate-300 dark:border-darkslate-700 px-3 py-2.5 rounded-lg text-sm font-semibold text-slate-900 dark:text-white focus:ring-2 focus:ring-railblue-600 focus:outline-none">
+                                    <option value="Passenger" selected>Passenger (Book tickets, PNR status, view history)</option>
+                                    <option value="Admin">Administrator (Manage fleet, routes, timetable & audits)</option>
+                                </select>
+                            </div>
+
+                            <button
+                                type="submit"
+                                id="regSubmitBtn"
+                                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 text-sm mt-3">
+                                <i class="fa-solid fa-user-check"></i>
+                                <span>Register New Account</span>
+                            </button>
+                        </form>
+
                     </div>
 
-                    <!-- ------------------------------------------ -->
-                    <!-- FORM 1: LOGIN                              -->
-                    <!-- ------------------------------------------ -->
-                    <form id="loginForm" onsubmit="handleLoginSubmit(event)" class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                                Email Address <span class="text-rose-500">*</span>
-                            </label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
-                                    <i class="fa-regular fa-envelope text-sm"></i>
-                                </span>
-                                <input
-                                    type="email"
-                                    id="loginEmail"
-                                    required
-                                    class="w-full border border-slate-300 pl-10 pr-4 py-2.5 rounded-xl text-sm font-medium focus:ring-2 focus:ring-railblue-500 focus:outline-none transition"
-                                    placeholder="e.g. 24btcsepy0020@pondiuni.ac.in">
-                            </div>
-                        </div>
-
-                        <div>
-                            <div class="flex items-center justify-between mb-1.5">
-                                <label class="text-xs font-bold uppercase tracking-wider text-slate-600">
-                                    Password <span class="text-rose-500">*</span>
-                                </label>
-                                <a href="javascript:void(0)" onclick="alert('For project demonstration, use password: password123 (Passenger) or Admin@1234 (Admin)')" class="text-[11px] font-semibold text-railblue-600 hover:underline">
-                                    Forgot Password?
-                                </a>
-                            </div>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
-                                    <i class="fa-solid fa-lock text-sm"></i>
-                                </span>
-                                <input
-                                    type="password"
-                                    id="loginPassword"
-                                    required
-                                    class="w-full border border-slate-300 pl-10 pr-11 py-2.5 rounded-xl text-sm font-medium focus:ring-2 focus:ring-railblue-500 focus:outline-none transition"
-                                    placeholder="Enter your password">
-                                <button
-                                    type="button"
-                                    onclick="togglePasswordVisibility('loginPassword', 'loginEyeIcon')"
-                                    class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none">
-                                    <i id="loginEyeIcon" class="fa-regular fa-eye"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center justify-between text-xs pt-1">
-                            <label class="flex items-center gap-2 cursor-pointer text-slate-600">
-                                <input type="checkbox" id="rememberMe" checked class="rounded border-slate-300 text-railblue-600 focus:ring-railblue-500">
-                                <span>Remember account</span>
-                            </label>
-                            <span class="text-slate-400 text-[11px]">Bcrypt SHA-256 Secure</span>
-                        </div>
-
-                        <button
-                            type="submit"
-                            id="loginSubmitBtn"
-                            class="w-full bg-[#123B65] hover:bg-[#1769AA] text-white font-bold py-3 rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 text-sm mt-2">
-                            <i class="fa-solid fa-arrow-right-to-bracket"></i>
-                            <span>Sign In to RailConnect</span>
-                        </button>
-                    </form>
-
-                    <!-- ------------------------------------------ -->
-                    <!-- FORM 2: REGISTRATION                       -->
-                    <!-- ------------------------------------------ -->
-                    <form id="registerForm" onsubmit="handleRegisterSubmit(event)" class="hidden space-y-3.5">
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                                Full Name <span class="text-rose-500">*</span>
-                            </label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
-                                    <i class="fa-regular fa-user text-sm"></i>
-                                </span>
-                                <input
-                                    type="text"
-                                    id="regName"
-                                    required
-                                    class="w-full border border-slate-300 pl-10 pr-4 py-2.5 rounded-xl text-sm font-medium focus:ring-2 focus:ring-railblue-500 focus:outline-none"
-                                    placeholder="e.g. Narendra Sharma">
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                                Email Address <span class="text-rose-500">*</span>
-                            </label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
-                                    <i class="fa-regular fa-envelope text-sm"></i>
-                                </span>
-                                <input
-                                    type="email"
-                                    id="regEmail"
-                                    required
-                                    class="w-full border border-slate-300 pl-10 pr-4 py-2.5 rounded-xl text-sm font-medium focus:ring-2 focus:ring-railblue-500 focus:outline-none"
-                                    placeholder="e.g. passenger@domain.com">
-                            </div>
-                        </div>
-
-                        <div>
-                            <div class="flex items-center justify-between mb-1.5">
-                                <label class="text-xs font-bold uppercase tracking-wider text-slate-600">
-                                    Mobile Number <span class="text-rose-500">*</span>
-                                </label>
-                                <span class="text-[10px] text-railblue-600 font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-100">Strict 10 Digits (6-9)</span>
-                            </div>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 font-mono text-xs font-bold border-r border-slate-200 pr-2">
-                                    +91
-                                </span>
-                                <input
-                                    type="tel"
-                                    id="regPhone"
-                                    required
-                                    maxlength="10"
-                                    pattern="[6-9][0-9]{9}"
-                                    oninput="validatePhoneInput(this)"
-                                    class="w-full border border-slate-300 pl-14 pr-4 py-2.5 rounded-xl text-sm font-mono font-bold focus:ring-2 focus:ring-railblue-500 focus:outline-none"
-                                    placeholder="9876543210">
-                            </div>
-                            <div class="flex items-center justify-between mt-1 text-[10px]">
-                                <span id="phoneValidationHint" class="text-slate-400">Must start with 6, 7, 8, or 9</span>
-                                <span id="phoneDigitCounter" class="text-slate-400 font-mono">0/10 digits</span>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                                Password (Min. 6 characters) <span class="text-rose-500">*</span>
-                            </label>
-                            <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
-                                    <i class="fa-solid fa-lock text-sm"></i>
-                                </span>
-                                <input
-                                    type="password"
-                                    id="regPassword"
-                                    required
-                                    minlength="6"
-                                    class="w-full border border-slate-300 pl-10 pr-11 py-2.5 rounded-xl text-sm font-medium focus:ring-2 focus:ring-railblue-500 focus:outline-none"
-                                    placeholder="Create password">
-                                <button
-                                    type="button"
-                                    onclick="togglePasswordVisibility('regPassword', 'regEyeIcon')"
-                                    class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none">
-                                    <i id="regEyeIcon" class="fa-regular fa-eye"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                                Role / Account Type <span class="text-rose-500">*</span>
-                            </label>
-                            <select
-                                id="regRole"
-                                class="w-full border border-slate-300 px-3 py-2.5 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-railblue-500 focus:outline-none bg-white">
-                                <option value="Passenger" selected>Passenger (Book tickets, PNR status, view history)</option>
-                                <option value="Admin">Administrator (Manage fleet, routes, timetable & audits)</option>
-                            </select>
-                        </div>
-
-                        <button
-                            type="submit"
-                            id="regSubmitBtn"
-                            class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 text-sm mt-3">
-                            <i class="fa-solid fa-user-check"></i>
-                            <span>Register New Account</span>
-                        </button>
-                    </form>
-
+                    <!-- Card Footer Info -->
+                    <div class="bg-slate-50 dark:bg-darkslate-850 px-6 py-3 border-t border-slate-200 dark:border-darkslate-800 text-center">
+                        <span class="text-xs text-slate-500 dark:text-slate-400 flex items-center justify-center gap-1.5 font-medium">
+                            <i class="fa-solid fa-shield-halved text-emerald-600 dark:text-emerald-400"></i>
+                            <span>Role-Based Access Control Active &bull; MySQL Protected</span>
+                        </span>
+                    </div>
                 </div>
 
-                <!-- Card Footer Info -->
-                <div class="bg-slate-50 px-6 py-3.5 border-t border-slate-200 text-center">
-                    <span class="text-xs text-slate-500 flex items-center justify-center gap-1.5 font-medium">
-                        <i class="fa-solid fa-shield-halved text-emerald-600"></i>
-                        <span>Role-Based Access Control Active &bull; MySQL Protected</span>
-                    </span>
+                <!-- Admin Link Helper -->
+                <div class="p-3.5 rounded-xl bg-slate-100 dark:bg-darkslate-900/60 border border-slate-200 dark:border-darkslate-800 text-center text-xs">
+                    <span class="text-slate-500 dark:text-slate-400">Need railway operational control?</span>
+                    <button type="button" onclick="fillCredentials('admin')" class="font-bold text-[#1E3A8A] dark:text-sky-400 hover:underline ml-1">
+                        Sign in as System Admin
+                    </button>
                 </div>
-            </div>
 
-            <!-- Portal Switcher Card -->
-            <div class="mt-4 p-4 rounded-2xl bg-white/70 backdrop-blur-sm border border-slate-200 text-center text-xs">
-                <span class="text-slate-500">Need administrative operations cockpit?</span>
-                <a href="/login" onclick="fillCredentials('admin')" class="font-bold text-[#123B65] hover:text-railblue-600 underline ml-1">
-                    Sign in with Admin Credentials
-                </a>
             </div>
-
         </div>
+
     </main>
 
     <!-- ============================================== -->
-    <!-- 4. FOOTER & DISCLAIMER                         -->
+    <!-- FOOTER                                         -->
     <!-- ============================================== -->
-    <footer class="bg-[#123B65] text-slate-300 text-xs py-6 px-4 sm:px-8 border-t border-white/10">
-        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+    <footer class="bg-[#0C2340] dark:bg-darkslate-950 text-slate-400 text-xs py-4 px-4 sm:px-8 border-t border-white/10 shrink-0">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
             <div>
-                <div class="font-bold text-white">RailConnect — Railway Reservation System</div>
-                <div class="text-[11px] text-slate-400 mt-0.5">Academic Project &bull; Pondicherry University DBMS Lab &bull; MySQL 8.0 & Express.js</div>
+                <span class="font-bold text-white">RailConnect — Indian Railway Management Portal</span>
+                <span class="block text-[11px] text-slate-400 mt-0.5">Academic DBMS Project &bull; Express 5 & MySQL 8.0</span>
             </div>
-            <div class="text-[10px] text-slate-400 max-w-md">
-                Disclaimer: RailConnect is an academic simulation designed for educational purposes and is not affiliated with IRCTC or the Ministry of Railways, Government of India.
+            <div class="text-[11px] text-slate-400">
+                English Only &bull; Accessible WCAG AA &bull; 256-Bit SSL Encrypted
             </div>
         </div>
     </footer>
 
     <!-- ============================================== -->
-    <!-- 5. JAVASCRIPT LOGIC                            -->
+    <!-- JAVASCRIPT LOGIC                               -->
     <!-- ============================================== -->
     <script>
         const API_URL = "/api";
+
+        // Theme Toggle Function
+        function togglePortalTheme() {
+            const html = document.documentElement;
+            const isDark = html.classList.contains('dark');
+            if (isDark) {
+                html.classList.remove('dark');
+                localStorage.setItem('railway_portal_theme', 'light');
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('railway_portal_theme', 'dark');
+            }
+            updateThemeButtonUI(!isDark);
+        }
+
+        function updateThemeButtonUI(isDark) {
+            const icons = document.querySelectorAll('.theme-toggle-icon');
+            const texts = document.querySelectorAll('.theme-toggle-text');
+            icons.forEach(ic => {
+                ic.className = isDark ? "fa-solid fa-sun text-amber-400 theme-toggle-icon" : "fa-solid fa-moon text-amber-400 theme-toggle-icon";
+            });
+            texts.forEach(tx => {
+                tx.textContent = isDark ? "Light" : "Dark";
+            });
+        }
 
         // Live Clock
         function updateLiveClock() {
@@ -417,6 +541,9 @@
 
         // Check if redirect query parameter or pending booking exists
         document.addEventListener("DOMContentLoaded", () => {
+            const isDark = document.documentElement.classList.contains('dark');
+            updateThemeButtonUI(isDark);
+
             const urlParams = new URLSearchParams(window.location.search);
             const redirectParam = urlParams.get('redirect');
             const pendingBooking = sessionStorage.getItem('pendingBooking');
@@ -437,7 +564,7 @@
 
             if (input.type === "password") {
                 input.type = "text";
-                icon.className = "fa-regular fa-eye-slash text-railblue-600";
+                icon.className = "fa-regular fa-eye-slash text-railblue-600 dark:text-sky-400";
             } else {
                 input.type = "password";
                 icon.className = "fa-regular fa-eye";
@@ -446,7 +573,6 @@
 
         // Live Phone Validation & Digit Counter
         function validatePhoneInput(input) {
-            // Strip any non-digit
             input.value = input.value.replace(/\D/g, '').slice(0, 10);
             
             const hint = document.getElementById("phoneValidationHint");
@@ -467,7 +593,7 @@
             if (!['6', '7', '8', '9'].includes(firstDigit)) {
                 if (hint) {
                     hint.textContent = "Invalid: First digit must be 6, 7, 8, or 9";
-                    hint.className = "text-rose-600 font-bold";
+                    hint.className = "text-rose-600 dark:text-rose-400 font-bold";
                 }
                 return;
             }
@@ -475,12 +601,12 @@
             if (len === 10) {
                 if (hint) {
                     hint.textContent = "✓ Valid Indian mobile number format";
-                    hint.className = "text-emerald-600 font-bold";
+                    hint.className = "text-emerald-600 dark:text-emerald-400 font-bold";
                 }
             } else {
                 if (hint) {
                     hint.textContent = `Enter ${10 - len} more digit(s)...`;
-                    hint.className = "text-amber-600";
+                    hint.className = "text-amber-600 dark:text-amber-400";
                 }
             }
         }
@@ -491,11 +617,11 @@
             if (type === 'admin') {
                 document.getElementById("loginEmail").value = "admin@railway.gov.in";
                 document.getElementById("loginPassword").value = "Admin@1234";
-                showStatusMessage("Admin credentials filled: admin@railway.gov.in", "info");
+                showStatusMessage("Admin demo credentials filled: admin@railway.gov.in", "info");
             } else {
                 document.getElementById("loginEmail").value = "24btcsepy0020@pondiuni.ac.in";
                 document.getElementById("loginPassword").value = "password123";
-                showStatusMessage("Passenger credentials filled: 24btcsepy0020@pondiuni.ac.in", "info");
+                showStatusMessage("Passenger demo credentials filled: 24btcsepy0020@pondiuni.ac.in", "info");
             }
         }
 
@@ -507,15 +633,15 @@
                 const res = await fetch(`${API_URL}/db-status`);
                 const data = await res.json();
                 if (res.ok && data.status === 'connected') {
-                    badge.className = "hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200";
+                    badge.className = "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800";
                     text.textContent = `MySQL Connected (${data.database})`;
                 } else {
-                    badge.className = "hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200";
+                    badge.className = "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800";
                     text.textContent = "MySQL Disconnected";
                 }
             } catch {
-                badge.className = "hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200";
-                text.textContent = "Server Offline";
+                badge.className = "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800";
+                text.textContent = "Server Standby";
             }
         }
 
@@ -524,8 +650,8 @@
             document.getElementById("loginForm").classList.remove("hidden");
             document.getElementById("registerForm").classList.add("hidden");
 
-            document.getElementById("loginTab").className = "w-1/2 pb-3 font-bold text-sm text-railblue-600 border-b-2 border-railblue-600 flex items-center justify-center gap-2 transition";
-            document.getElementById("registerTab").className = "w-1/2 pb-3 font-bold text-sm text-slate-400 hover:text-slate-600 flex items-center justify-center gap-2 transition";
+            document.getElementById("loginTab").className = "w-1/2 pb-3 font-bold text-sm text-railblue-600 dark:text-sky-400 border-b-2 border-railblue-600 dark:border-sky-400 flex items-center justify-center gap-2 transition";
+            document.getElementById("registerTab").className = "w-1/2 pb-3 font-bold text-sm text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 flex items-center justify-center gap-2 transition";
             hideStatusMessage();
         }
 
@@ -533,8 +659,8 @@
             document.getElementById("loginForm").classList.add("hidden");
             document.getElementById("registerForm").classList.remove("hidden");
 
-            document.getElementById("registerTab").className = "w-1/2 pb-3 font-bold text-sm text-railblue-600 border-b-2 border-railblue-600 flex items-center justify-center gap-2 transition";
-            document.getElementById("loginTab").className = "w-1/2 pb-3 font-bold text-sm text-slate-400 hover:text-slate-600 flex items-center justify-center gap-2 transition";
+            document.getElementById("registerTab").className = "w-1/2 pb-3 font-bold text-sm text-railblue-600 dark:text-sky-400 border-b-2 border-railblue-600 dark:border-sky-400 flex items-center justify-center gap-2 transition";
+            document.getElementById("loginTab").className = "w-1/2 pb-3 font-bold text-sm text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 flex items-center justify-center gap-2 transition";
             hideStatusMessage();
         }
 
@@ -548,14 +674,14 @@
             msg.textContent = text;
 
             if (type === 'success') {
-                box.className = "mb-4 p-3 rounded-xl text-xs font-semibold flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200";
-                icon.className = "fa-solid fa-circle-check text-emerald-600";
+                box.className = "mb-4 p-3 rounded-lg text-xs font-semibold flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800";
+                icon.className = "fa-solid fa-circle-check text-emerald-600 dark:text-emerald-400";
             } else if (type === 'error') {
-                box.className = "mb-4 p-3 rounded-xl text-xs font-semibold flex items-center gap-2 bg-rose-50 text-rose-800 border border-rose-200";
-                icon.className = "fa-solid fa-triangle-exclamation text-rose-600";
+                box.className = "mb-4 p-3 rounded-lg text-xs font-semibold flex items-center gap-2 bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800";
+                icon.className = "fa-solid fa-triangle-exclamation text-rose-600 dark:text-rose-400";
             } else {
-                box.className = "mb-4 p-3 rounded-xl text-xs font-semibold flex items-center gap-2 bg-blue-50 text-railblue-800 border border-blue-200";
-                icon.className = "fa-solid fa-circle-info text-railblue-600";
+                box.className = "mb-4 p-3 rounded-lg text-xs font-semibold flex items-center gap-2 bg-blue-50 dark:bg-railblue-950/60 text-railblue-800 dark:text-sky-300 border border-blue-200 dark:border-blue-900/60";
+                icon.className = "fa-solid fa-circle-info text-railblue-600 dark:text-sky-400";
             }
         }
 
@@ -573,7 +699,7 @@
 
             btn.disabled = true;
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...`;
-            showStatusMessage("Verifying credentials against MySQL database...", "info");
+            showStatusMessage("Verifying credentials against railway database...", "info");
 
             try {
                 const response = await fetch(`${API_URL}/login`, {
@@ -588,14 +714,12 @@
                     localStorage.setItem("railway_user", JSON.stringify(data.user));
 
                     setTimeout(() => {
-                        // Check if returning to booking flow
                         const pendingBooking = sessionStorage.getItem('pendingBooking');
                         if (data.user.role === 'Passenger' && pendingBooking) {
                             window.location.href = "/?resumeBooking=true";
                             return;
                         }
 
-                        // Role-based portal routing
                         if (data.user.role === 'Admin') {
                             window.location.href = "/admin";
                         } else {
@@ -624,7 +748,6 @@
             const role = document.getElementById("regRole").value;
             const btn = document.getElementById("regSubmitBtn");
 
-            // Client-side strict validation
             const phoneRegex = /^[6-9]\d{9}$/;
             if (!phoneRegex.test(phone)) {
                 showStatusMessage("Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.", "error");

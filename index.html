@@ -3,8 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RailConnect — Indian Railway Reservation System</title>
+    <title>IRCTC RailConnect — Official Indian Railways National Reservation Portal</title>
     
+    <!-- Instant Theme Detection to prevent FOUC (Flash of Unstyled Content) -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('railway_portal_theme');
+            const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -14,9 +27,10 @@
                 extend: {
                     colors: {
                         navy: {
-                            800: '#123B65',
-                            900: '#0C2340',
-                            950: '#081729',
+                            750: '#153A65',
+                            800: '#0E2E52',
+                            900: '#0A223E',
+                            950: '#061628',
                         },
                         railblue: {
                             50: '#F0F6FB',
@@ -30,14 +44,23 @@
                             400: '#FB923C',
                             500: '#F28C28',
                             600: '#EA580C',
+                            700: '#C2410C',
                         },
                         railgreen: {
                             600: '#16804A',
                             700: '#13673B',
+                            800: '#0F512E',
+                        },
+                        darkslate: {
+                            800: '#152238',
+                            850: '#0F1A2C',
+                            900: '#0A1322',
+                            950: '#060C16',
                         }
                     },
                     fontFamily: {
                         sans: ['Plus Jakarta Sans', 'Inter', 'Segoe UI', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Courier New', 'monospace'],
                     }
                 }
             }
@@ -48,30 +71,39 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
 
+    <!-- Official Portal Styles -->
     <style>
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #F3F6FA;
-            color: #1F2937;
         }
         .hero-railway-bg {
-            background: linear-gradient(135deg, rgba(12, 35, 64, 0.95) 0%, rgba(18, 59, 101, 0.90) 50%, rgba(23, 105, 170, 0.85) 100%),
+            background: linear-gradient(135deg, rgba(6, 22, 40, 0.95) 0%, rgba(10, 34, 62, 0.92) 50%, rgba(14, 46, 82, 0.90) 100%),
                         url('https://images.unsplash.com/photo-1532105956626-9569c03602f6?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
         }
-        .subtle-track-pattern {
-            background-image: repeating-linear-gradient(90deg, rgba(23, 105, 170, 0.05) 0, rgba(23, 105, 170, 0.05) 10px, transparent 10px, transparent 20px);
+        .dark .hero-railway-bg {
+            background: linear-gradient(135deg, rgba(6, 12, 22, 0.98) 0%, rgba(8, 17, 31, 0.95) 50%, rgba(10, 22, 40, 0.93) 100%),
+                        url('https://images.unsplash.com/photo-1532105956626-9569c03602f6?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
         }
         .tab-active {
-            color: #123B65;
-            border-bottom: 3px solid #F28C28;
-            font-weight: 700;
+            color: #0E2E52 !important;
+            border-bottom: 3px solid #EA580C !important;
+            font-weight: 800 !important;
+        }
+        .dark .tab-active {
+            color: #FB923C !important;
+            border-bottom: 3px solid #FB923C !important;
         }
         .class-card.selected {
-            border-color: #1769AA;
-            background-color: #EBF3FA;
-            box-shadow: 0 0 0 2px rgba(23, 105, 170, 0.2);
+            border-color: #1769AA !important;
+            background-color: #F0F6FB !important;
+            box-shadow: 0 0 0 2px rgba(23, 105, 170, 0.25) !important;
+        }
+        .dark .class-card.selected {
+            border-color: #38BDF8 !important;
+            background-color: rgba(17, 77, 125, 0.35) !important;
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.3) !important;
         }
         @media print {
             body * { visibility: hidden; }
@@ -81,51 +113,69 @@
     </style>
 </head>
 
-<body class="antialiased selection:bg-railblue-600 selection:text-white flex flex-col min-h-screen">
+<body class="bg-slate-100 dark:bg-darkslate-950 text-slate-800 dark:text-slate-100 antialiased selection:bg-railblue-600 selection:text-white flex flex-col min-h-screen transition-colors duration-200">
 
     <!-- ============================================================== -->
-    <!-- 1. TOP UTILITY BAR (IRCTC-INSPIRED)                            -->
+    <!-- 1. TOP UTILITY MASTHEAD (OFFICIAL INDIAN RAILWAYS HEADER)      -->
     <!-- ============================================================== -->
-    <div class="bg-navy-950 text-slate-300 text-[11px] py-1.5 px-4 border-b border-navy-800">
+    <div class="bg-navy-950 text-slate-300 text-[11px] py-1.5 px-4 border-b border-navy-900">
         <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
             
-            <!-- Left: Live Clock & Helpline -->
-            <div class="flex items-center gap-4">
+            <!-- Left: Bilingual Government Line, Live IST Clock & Helpline -->
+            <div class="flex items-center gap-3 sm:gap-4 flex-wrap">
+                <div class="flex items-center gap-1.5 font-semibold text-white tracking-wide">
+                    <span class="w-4 h-4 rounded-full bg-saffron-500 flex items-center justify-center text-[9px] text-white font-black">
+                        <i class="fa-solid fa-train"></i>
+                    </span>
+                    <span class="text-saffron-400 font-bold">Indian Railways</span>
+                    <span class="text-slate-500">|</span>
+                    <span class="text-slate-200 uppercase tracking-tight text-[10px]">Official Portal</span>
+                </div>
+
+                <span class="hidden md:inline text-slate-600">|</span>
+
                 <span class="flex items-center gap-1.5 font-mono text-slate-300 font-semibold" id="topClock">
                     <i class="fa-regular fa-clock text-saffron-400"></i> Loading IST...
                 </span>
-                <span class="hidden sm:inline text-slate-600">|</span>
-                <span class="hidden sm:flex items-center gap-1.5 hover:text-white transition">
-                    <i class="fa-solid fa-phone text-saffron-400"></i> 24x7 Customer Support: <strong class="text-white font-mono">139</strong> (Rail Madad)
+
+                <span class="hidden lg:inline text-slate-600">|</span>
+
+                <span class="hidden lg:flex items-center gap-1.5 hover:text-white transition">
+                    <i class="fa-solid fa-phone text-saffron-400"></i> Rail Madad: <strong class="text-white font-mono">139</strong>
                 </span>
             </div>
 
-            <!-- Right: Accessibility & Auth / Admin Links -->
-            <div class="flex items-center gap-4 text-slate-300">
-                <!-- Accessibility font resize buttons -->
-                <div class="hidden md:flex items-center gap-1.5 bg-navy-900 px-2 py-0.5 rounded border border-navy-800 text-[10px]">
-                    <span class="text-slate-400">A-</span>
-                    <span class="text-white font-bold">A</span>
-                    <span class="text-slate-400">A+</span>
+            <!-- Right: Accessibility, DB Health, Theme Switcher & Admin Link -->
+            <div class="flex items-center gap-3 sm:gap-4 text-slate-300">
+                
+                <!-- Font Resize Buttons -->
+                <div class="hidden sm:flex items-center gap-1.5 bg-navy-900/80 px-2 py-0.5 rounded border border-navy-800 text-[10px]">
+                    <button type="button" onclick="document.body.style.fontSize='13px'" class="text-slate-400 hover:text-white" title="Decrease font size">A-</button>
+                    <button type="button" onclick="document.body.style.fontSize='14px'" class="text-white font-bold px-0.5" title="Standard font size">A</button>
+                    <button type="button" onclick="document.body.style.fontSize='15px'" class="text-slate-400 hover:text-white" title="Increase font size">A+</button>
                 </div>
 
-                <a href="#scheduleSection" class="hover:text-white transition flex items-center gap-1">
-                    <i class="fa-regular fa-calendar-days text-slate-400"></i> Train Schedule
-                </a>
+                <span class="hidden sm:inline text-slate-600">|</span>
+
+                <!-- Theme Toggle Button (Light / Dark Mode) -->
+                <button type="button" onclick="togglePortalTheme()" class="flex items-center gap-1.5 bg-navy-900 hover:bg-navy-850 text-slate-200 hover:text-white px-2.5 py-0.5 rounded border border-navy-750 transition text-[11px] font-semibold" title="Toggle Light / Dark Mode">
+                    <i class="fa-solid fa-moon text-amber-400 theme-toggle-icon"></i>
+                    <span class="theme-toggle-text">Dark Mode</span>
+                </button>
 
                 <span class="text-slate-600">|</span>
 
-                <!-- Database status badge in topbar -->
-                <div id="topDbStatus" class="flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/40">
+                <!-- PRS Database Status Badge -->
+                <div id="topDbStatus" class="flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-800/50">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                     <span id="topDbText">MySQL Connected</span>
                 </div>
 
                 <span class="text-slate-600">|</span>
 
-                <!-- Discreet Admin Link -->
+                <!-- Discreet Admin Operations Portal -->
                 <a href="/admin" class="text-slate-400 hover:text-saffron-400 font-semibold transition flex items-center gap-1" title="Railway Management System - Admin Operations">
-                    <i class="fa-solid fa-lock text-[10px]"></i> Admin Portal
+                    <i class="fa-solid fa-lock text-[10px]"></i> <span class="hidden sm:inline">Admin Portal</span>
                 </a>
             </div>
         </div>
@@ -133,40 +183,40 @@
 
 
     <!-- ============================================================== -->
-    <!-- 2. MAIN NAVIGATION BAR                                         -->
+    <!-- 2. MAIN OFFICIAL NAVIGATION BAR                                -->
     <!-- ============================================================== -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm transition">
+    <header class="bg-white dark:bg-darkslate-900 border-b border-slate-200 dark:border-darkslate-800 sticky top-0 z-40 shadow-sm transition-colors">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
             
             <!-- RailConnect Official Brand Logo -->
             <a href="/" class="flex items-center gap-3.5 group">
-                <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-navy-800 to-railblue-600 flex items-center justify-center text-white shadow-md shadow-navy-800/20 group-hover:scale-105 transition">
-                    <i class="fa-solid fa-train text-xl text-saffron-400"></i>
+                <div class="w-11 h-11 rounded-lg bg-navy-900 dark:bg-darkslate-850 flex items-center justify-center text-white shadow-md border border-navy-800 dark:border-darkslate-800 group-hover:scale-105 transition">
+                    <i class="fa-solid fa-train text-xl text-saffron-500"></i>
                 </div>
                 <div>
                     <div class="flex items-center gap-2">
-                        <span class="font-extrabold text-2xl tracking-tight text-navy-800">Rail<span class="text-saffron-500">Connect</span></span>
-                        <span class="text-[9px] font-bold bg-navy-800 text-white px-1.5 py-0.5 rounded uppercase tracking-wider">DBMS</span>
+                        <span class="font-black text-2xl tracking-tight text-navy-900 dark:text-white">Rail<span class="text-saffron-500">Connect</span></span>
+                        <span class="text-[9px] font-bold bg-navy-900 dark:bg-darkslate-800 text-saffron-400 px-1.5 py-0.5 rounded uppercase tracking-wider border border-navy-800 dark:border-darkslate-700">IRCTC Next-Gen</span>
                     </div>
-                    <p class="text-[11px] text-slate-500 font-medium">Indian Railway Reservation & Timetable System</p>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Indian Railway Passenger Reservation & Timetable System</p>
                 </div>
             </a>
 
             <!-- Navigation Links -->
-            <nav class="hidden lg:flex items-center gap-7 text-xs font-bold text-slate-700">
-                <a href="#bookingSection" class="hover:text-railblue-600 transition flex items-center gap-1.5 text-navy-800">
-                    <i class="fa-solid fa-magnifying-glass text-railblue-600"></i> Book Tickets
+            <nav class="hidden lg:flex items-center gap-6 text-xs font-bold text-slate-700 dark:text-slate-200">
+                <a href="#bookingSection" class="hover:text-railblue-600 dark:hover:text-saffron-400 transition flex items-center gap-1.5 text-navy-900 dark:text-white">
+                    <i class="fa-solid fa-magnifying-glass text-railblue-600 dark:text-saffron-400"></i> Book Tickets
                 </a>
-                <a href="#pnrTab" onclick="openTab('pnr')" class="hover:text-railblue-600 transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-id-badge text-railblue-600"></i> PNR Status
+                <a href="#pnrTab" onclick="openTab('pnr')" class="hover:text-railblue-600 dark:hover:text-saffron-400 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-id-badge text-railblue-600 dark:text-saffron-400"></i> PNR Status
                 </a>
-                <a href="#scheduleSection" class="hover:text-railblue-600 transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-route text-railblue-600"></i> Train Routes
+                <a href="#scheduleSection" class="hover:text-railblue-600 dark:hover:text-saffron-400 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-route text-railblue-600 dark:text-saffron-400"></i> Train Routes
                 </a>
-                <a href="#popularSection" class="hover:text-railblue-600 transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-train-subway text-railblue-600"></i> Featured Trains
+                <a href="#popularSection" class="hover:text-railblue-600 dark:hover:text-saffron-400 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-train-subway text-railblue-600 dark:text-saffron-400"></i> Featured Trains
                 </a>
-                <a href="/passenger" class="text-railblue-700 hover:text-navy-800 transition flex items-center gap-1.5 bg-railblue-50 px-3 py-1.5 rounded-lg border border-railblue-200">
+                <a href="/passenger" class="text-railblue-700 dark:text-sky-300 hover:text-navy-900 transition flex items-center gap-1.5 bg-railblue-50 dark:bg-darkslate-800 px-3 py-1.5 rounded-lg border border-railblue-200 dark:border-darkslate-700">
                     <i class="fa-solid fa-ticket text-xs"></i> My Bookings
                 </a>
             </nav>
@@ -176,123 +226,135 @@
                 
                 <!-- Logged In State Container -->
                 <div id="userProfileNav" class="hidden items-center gap-3">
-                    <a href="/passenger" class="flex items-center gap-2.5 pl-3 border-l border-slate-200 hover:opacity-85 transition" title="Go to Dashboard">
-                        <div class="w-9 h-9 rounded-xl bg-navy-800 text-white flex items-center justify-center font-bold text-sm shadow-sm" id="userAvatar">
+                    <a href="/passenger" class="flex items-center gap-2.5 pl-3 border-l border-slate-200 dark:border-darkslate-700 hover:opacity-85 transition" title="Go to Dashboard">
+                        <div class="w-9 h-9 rounded-lg bg-navy-900 dark:bg-darkslate-800 text-white flex items-center justify-center font-bold text-sm shadow-sm border border-navy-800 dark:border-darkslate-700" id="userAvatar">
                             U
                         </div>
                         <div class="text-left hidden sm:block">
-                            <div class="text-xs font-bold text-slate-900 leading-tight" id="userNameNav">Passenger</div>
-                            <span class="text-[10px] font-bold text-railblue-700 bg-railblue-50 px-1.5 py-0.2 rounded" id="userRoleNav">Passenger</span>
+                            <div class="text-xs font-bold text-slate-900 dark:text-white leading-tight" id="userNameNav">Passenger</div>
+                            <span class="text-[10px] font-bold text-railblue-700 dark:text-sky-400 bg-railblue-50 dark:bg-darkslate-800 px-1.5 py-0.2 rounded" id="userRoleNav">Passenger</span>
                         </div>
                     </a>
 
-                    <a href="/passenger" class="bg-railblue-600 hover:bg-railblue-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm">
+                    <a href="/passenger" class="bg-railblue-600 hover:bg-railblue-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition flex items-center gap-1.5 shadow-sm">
                         <i class="fa-solid fa-gauge-high text-xs"></i> <span>Dashboard</span>
                     </a>
 
-                    <button onclick="logoutUser()" class="text-xs font-semibold text-slate-500 hover:text-rose-600 transition p-2 rounded-lg hover:bg-slate-100" title="Sign Out">
+                    <button onclick="logoutUser()" class="text-xs font-semibold text-slate-500 hover:text-rose-600 transition p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-darkslate-800" title="Sign Out">
                         <i class="fa-solid fa-arrow-right-from-bracket text-base"></i>
                     </button>
                 </div>
 
                 <!-- Logged Out State Container -->
                 <div id="authButtonsNav" class="flex items-center gap-2">
-                    <button onclick="openAuthModal('login')" class="text-xs font-bold text-navy-800 hover:text-railblue-600 px-3.5 py-2 rounded-xl hover:bg-slate-100 transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-right-to-bracket text-xs text-railblue-600"></i> Login
+                    <button onclick="openAuthModal('login')" class="text-xs font-bold text-navy-900 dark:text-slate-200 hover:text-railblue-600 dark:hover:text-white px-3.5 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-darkslate-800 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-right-to-bracket text-xs text-railblue-600 dark:text-saffron-400"></i> Login
                     </button>
-                    <button onclick="openAuthModal('register')" class="bg-saffron-500 hover:bg-saffron-600 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm hover:shadow transition flex items-center gap-1.5">
+                    <button onclick="openAuthModal('register')" class="bg-saffron-500 hover:bg-saffron-600 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm hover:shadow transition flex items-center gap-1.5">
                         <i class="fa-solid fa-user-plus text-xs"></i> Register
                     </button>
                 </div>
 
                 <!-- Mobile Menu Toggle Button -->
-                <button onclick="toggleMobileNav()" class="lg:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100">
+                <button onclick="toggleMobileNav()" class="lg:hidden p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkslate-800">
                     <i class="fa-solid fa-bars text-lg"></i>
                 </button>
             </div>
         </div>
 
         <!-- Mobile Navigation Menu -->
-        <div id="mobileNavMenu" class="hidden lg:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-2 text-xs font-bold text-slate-700">
-            <a href="#bookingSection" class="block py-2 hover:text-railblue-600"><i class="fa-solid fa-train mr-2 text-railblue-600"></i> Book Tickets</a>
-            <a href="#pnrTab" onclick="openTab('pnr')" class="block py-2 hover:text-railblue-600"><i class="fa-solid fa-id-badge mr-2 text-railblue-600"></i> PNR Status</a>
-            <a href="#scheduleSection" class="block py-2 hover:text-railblue-600"><i class="fa-solid fa-route mr-2 text-railblue-600"></i> Train Timetable</a>
-            <a href="/passenger" class="block py-2 text-railblue-700"><i class="fa-solid fa-ticket mr-2"></i> My Bookings</a>
-            <a href="/admin" class="block py-2 text-saffron-600"><i class="fa-solid fa-lock mr-2"></i> Admin Operations Cockpit</a>
+        <div id="mobileNavMenu" class="hidden lg:hidden border-t border-slate-200 dark:border-darkslate-800 bg-white dark:bg-darkslate-900 px-4 py-3 space-y-2 text-xs font-bold text-slate-700 dark:text-slate-200">
+            <a href="#bookingSection" class="block py-2 hover:text-railblue-600 dark:hover:text-saffron-400"><i class="fa-solid fa-train mr-2 text-railblue-600 dark:text-saffron-400"></i> Book Tickets</a>
+            <a href="#pnrTab" onclick="openTab('pnr')" class="block py-2 hover:text-railblue-600 dark:hover:text-saffron-400"><i class="fa-solid fa-id-badge mr-2 text-railblue-600 dark:text-saffron-400"></i> PNR Status</a>
+            <a href="#scheduleSection" class="block py-2 hover:text-railblue-600 dark:hover:text-saffron-400"><i class="fa-solid fa-route mr-2 text-railblue-600 dark:text-saffron-400"></i> Train Timetable</a>
+            <a href="/passenger" class="block py-2 text-railblue-700 dark:text-sky-400"><i class="fa-solid fa-ticket mr-2"></i> My Bookings</a>
+            <a href="/admin" class="block py-2 text-saffron-600 dark:text-saffron-400"><i class="fa-solid fa-lock mr-2"></i> Admin Operations Cockpit</a>
         </div>
     </header>
+
+    <!-- Official Advisory Ticker Strip -->
+    <div class="bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-900/60 px-4 py-2 text-[11px] text-amber-900 dark:text-amber-300 flex items-center justify-between gap-3">
+        <div class="max-w-7xl mx-auto w-full flex items-center gap-2 overflow-hidden">
+            <span class="font-extrabold uppercase bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200 px-2 py-0.5 rounded text-[10px] shrink-0 flex items-center gap-1">
+                <i class="fa-solid fa-bullhorn"></i> IRCTC Notice
+            </span>
+            <div class="truncate font-medium">
+                Tatkal booking starts at 10:00 AM IST for AC classes and 11:00 AM IST for Non-AC classes. Carry valid original Government ID proof while travelling. Razorpay 256-bit SSL secured digital payments enabled.
+            </div>
+        </div>
+    </div>
 
 
     <!-- ============================================================== -->
     <!-- 3. HERO SECTION & PROMINENT IRCTC-INSPIRED BOOKING PANEL       -->
     <!-- ============================================================== -->
-    <section class="hero-railway-bg text-white pt-10 pb-20 px-4 sm:px-6 lg:px-8 relative shadow-inner">
+    <section class="hero-railway-bg text-white pt-8 pb-16 px-4 sm:px-6 lg:px-8 relative shadow-inner">
         
         <div class="max-w-7xl mx-auto">
             
-            <!-- Tagline banner -->
-            <div class="text-center max-w-3xl mx-auto mb-8">
-                <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-4 py-1 text-xs text-saffron-300 font-semibold mb-3">
+            <!-- Official Bilingual Tagline banner -->
+            <div class="text-center max-w-3xl mx-auto mb-6">
+                <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-md px-3.5 py-1 text-xs text-saffron-300 font-semibold mb-2.5">
                     <i class="fa-solid fa-shield-check"></i>
-                    <span>Official Indian Railways Academic DBMS Portal</span>
+                    <span>Official Passenger Reservation System (PRS) Engine</span>
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span class="text-white font-mono">MySQL Real-Time Sync</span>
+                    <span class="text-white font-mono">Live DBMS Sync</span>
                 </div>
-                <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-2 leading-tight">
-                    Your Journey, Our Responsibility
+                <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white mb-1.5 leading-tight">
+                    Indian Railways e-Ticketing System &bull; RailConnect
                 </h1>
-                <p class="text-slate-200 text-sm sm:text-base font-normal">
-                    Discover trains, explore intermediate routes, and book verified railway tickets with ease.
+                <p class="text-slate-200 text-xs sm:text-sm font-normal">
+                    Search scheduled express services, verify intermediate route halts, and reserve electronic tickets with instantaneous seat allocation.
                 </p>
             </div>
 
             <!-- PROMINENT IRCTC BOOKING CARD -->
-            <div id="bookingSection" class="max-w-5xl mx-auto bg-white rounded-3xl shadow-2xl text-slate-800 overflow-hidden border border-slate-200/80">
+            <div id="bookingSection" class="max-w-5xl mx-auto bg-white dark:bg-darkslate-900 rounded-xl shadow-2xl text-slate-800 dark:text-slate-100 overflow-hidden border border-slate-200 dark:border-darkslate-800 transition-colors">
                 
                 <!-- Card Header with Multi-Tabs -->
-                <div class="bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between px-6 pt-4 gap-2">
+                <div class="bg-slate-50 dark:bg-darkslate-850 border-b border-slate-200 dark:border-darkslate-800 flex flex-wrap items-center justify-between px-6 pt-3 gap-2">
                     <div class="flex items-center gap-6 overflow-x-auto">
                         <button id="tab-book" onclick="switchBookingTab('book')" class="pb-3 text-xs uppercase tracking-wider tab-active flex items-center gap-2">
                             <i class="fa-solid fa-train-subway text-sm text-saffron-500"></i> Book Ticket
                         </button>
-                        <button id="tab-pnr" onclick="switchBookingTab('pnr')" class="pb-3 text-xs uppercase tracking-wider text-slate-500 hover:text-navy-800 font-semibold flex items-center gap-2">
+                        <button id="tab-pnr" onclick="switchBookingTab('pnr')" class="pb-3 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-navy-900 dark:hover:text-white font-semibold flex items-center gap-2">
                             <i class="fa-solid fa-id-card text-sm"></i> PNR Status
                         </button>
-                        <button id="tab-schedule" onclick="switchBookingTab('schedule')" class="pb-3 text-xs uppercase tracking-wider text-slate-500 hover:text-navy-800 font-semibold flex items-center gap-2">
+                        <button id="tab-schedule" onclick="switchBookingTab('schedule')" class="pb-3 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-navy-900 dark:hover:text-white font-semibold flex items-center gap-2">
                             <i class="fa-solid fa-route text-sm"></i> Train Schedule
                         </button>
-                        <button id="tab-availability" onclick="switchBookingTab('availability')" class="pb-3 text-xs uppercase tracking-wider text-slate-500 hover:text-navy-800 font-semibold flex items-center gap-2">
+                        <button id="tab-availability" onclick="switchBookingTab('availability')" class="pb-3 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-navy-900 dark:hover:text-white font-semibold flex items-center gap-2">
                             <i class="fa-solid fa-chair text-sm"></i> Seat Availability
                         </button>
                     </div>
 
-                    <div class="text-[11px] font-bold text-navy-800 pb-3 hidden sm:flex items-center gap-1.5">
+                    <div class="text-[11px] font-bold text-navy-900 dark:text-slate-200 pb-3 hidden sm:flex items-center gap-1.5 font-mono">
                         <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        <span>IRCTC-Style Booking Engine</span>
+                        <span>CRIS-Compliant PRS Engine</span>
                     </div>
                 </div>
 
                 <!-- TAB CONTENT 1: BOOK TICKET -->
-                <div id="content-book" class="p-6 sm:p-8 space-y-6">
-                    <div class="flex items-center justify-between pb-2 border-b border-slate-100">
-                        <h2 class="text-base sm:text-lg font-extrabold text-navy-800 flex items-center gap-2">
-                            <span>BOOK YOUR JOURNEY</span>
-                            <span class="w-2 h-2 rounded-full bg-saffron-500"></span>
+                <div id="content-book" class="p-5 sm:p-7 space-y-5">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-darkslate-800">
+                        <h2 class="text-sm sm:text-base font-extrabold text-navy-900 dark:text-white flex items-center gap-2">
+                            <span class="uppercase">BOOK TRAIN TICKET</span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-saffron-500"></span>
                         </h2>
-                        <span class="text-xs text-slate-400 font-medium hidden sm:inline">Search across all direct and intermediate junction stations</span>
+                        <span class="text-xs text-slate-500 dark:text-slate-400 font-medium hidden sm:inline">Search across all origin, destination & intermediate junction halts</span>
                     </div>
 
-                    <form id="trainSearchForm" onsubmit="handleSearchTrains(event)" class="space-y-5">
+                    <form id="trainSearchForm" onsubmit="handleSearchTrains(event)" class="space-y-4">
                         
                         <!-- Station Input Grid with Swap Button -->
                         <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
                             
                             <!-- Origin Station -->
                             <div class="md:col-span-5 relative">
-                                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                                    <i class="fa-solid fa-location-dot text-railblue-600 mr-1"></i> From Station
+                                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                                    <i class="fa-solid fa-location-dot text-railblue-600 dark:text-sky-400 mr-1"></i> From (Origin Station)
                                 </label>
-                                <select id="fromStation" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-3 text-xs font-bold text-navy-800 focus:ring-2 focus:ring-railblue-600 focus:bg-white focus:outline-none transition shadow-sm">
+                                <select id="fromStation" class="w-full bg-slate-50 dark:bg-darkslate-950 border border-slate-300 dark:border-darkslate-800 rounded-lg px-3.5 py-2.5 text-xs font-bold text-navy-900 dark:text-slate-100 focus:ring-2 focus:ring-railblue-600 focus:bg-white dark:focus:bg-darkslate-900 focus:outline-none transition shadow-sm">
                                     <option value="MAS" selected>Chennai Central (MAS) - Chennai</option>
                                     <option value="NDLS">New Delhi (NDLS) - New Delhi</option>
                                     <option value="SBC">KSR Bengaluru City (SBC) - Bengaluru</option>
@@ -315,17 +377,17 @@
 
                             <!-- Swap Button -->
                             <div class="md:col-span-2 flex justify-center pt-2 md:pt-4">
-                                <button type="button" onclick="swapStations()" class="w-10 h-10 rounded-full bg-slate-100 hover:bg-railblue-600 text-railblue-600 hover:text-white border border-slate-300 transition flex items-center justify-center shadow-sm" title="Swap Stations">
+                                <button type="button" onclick="swapStations()" class="w-9 h-9 rounded-full bg-slate-100 dark:bg-darkslate-800 hover:bg-railblue-600 dark:hover:bg-railblue-600 text-railblue-600 dark:text-slate-200 hover:text-white border border-slate-300 dark:border-darkslate-700 transition flex items-center justify-center shadow-sm" title="Swap Origin and Destination">
                                     <i class="fa-solid fa-right-left text-xs"></i>
                                 </button>
                             </div>
 
                             <!-- Destination Station -->
                             <div class="md:col-span-5 relative">
-                                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                                    <i class="fa-solid fa-map-pin text-saffron-500 mr-1"></i> To Station
+                                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                                    <i class="fa-solid fa-map-pin text-saffron-500 mr-1"></i> To (Destination Station)
                                 </label>
-                                <select id="toStation" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-3 text-xs font-bold text-navy-800 focus:ring-2 focus:ring-railblue-600 focus:bg-white focus:outline-none transition shadow-sm">
+                                <select id="toStation" class="w-full bg-slate-50 dark:bg-darkslate-950 border border-slate-300 dark:border-darkslate-800 rounded-lg px-3.5 py-2.5 text-xs font-bold text-navy-900 dark:text-slate-100 focus:ring-2 focus:ring-railblue-600 focus:bg-white dark:focus:bg-darkslate-900 focus:outline-none transition shadow-sm">
                                     <option value="SBC" selected>KSR Bengaluru City (SBC) - Bengaluru</option>
                                     <option value="MAS">Chennai Central (MAS) - Chennai</option>
                                     <option value="NDLS">New Delhi (NDLS) - New Delhi</option>
@@ -350,17 +412,24 @@
                         <!-- Date, Class, Quota Row -->
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div>
-                                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                                    <i class="fa-regular fa-calendar text-railblue-600 mr-1"></i> Date of Journey
-                                </label>
-                                <input type="date" id="journeyDate" required class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-navy-800 focus:ring-2 focus:ring-railblue-600 focus:bg-white focus:outline-none transition">
+                                <div class="flex items-center justify-between mb-1">
+                                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                        <i class="fa-regular fa-calendar text-railblue-600 dark:text-sky-400 mr-1"></i> Date of Journey
+                                    </label>
+                                    <div class="flex items-center gap-1 text-[10px]">
+                                        <button type="button" onclick="quickSetDate(0)" class="text-railblue-600 dark:text-sky-400 hover:underline font-bold">Today</button>
+                                        <span class="text-slate-400">|</span>
+                                        <button type="button" onclick="quickSetDate(1)" class="text-railblue-600 dark:text-sky-400 hover:underline font-bold">Tomorrow</button>
+                                    </div>
+                                </div>
+                                <input type="date" id="journeyDate" required class="w-full bg-slate-50 dark:bg-darkslate-950 border border-slate-300 dark:border-darkslate-800 rounded-lg px-3.5 py-2 text-xs font-bold text-navy-900 dark:text-slate-100 focus:ring-2 focus:ring-railblue-600 focus:bg-white dark:focus:bg-darkslate-900 focus:outline-none transition">
                             </div>
 
                             <div>
-                                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                                    <i class="fa-solid fa-couch text-railblue-600 mr-1"></i> Travel Class
+                                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                                    <i class="fa-solid fa-couch text-railblue-600 dark:text-sky-400 mr-1"></i> Travel Class
                                 </label>
-                                <select id="filterClass" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-navy-800 focus:ring-2 focus:ring-railblue-600 focus:bg-white focus:outline-none">
+                                <select id="filterClass" class="w-full bg-slate-50 dark:bg-darkslate-950 border border-slate-300 dark:border-darkslate-800 rounded-lg px-3.5 py-2 text-xs font-bold text-navy-900 dark:text-slate-100 focus:ring-2 focus:ring-railblue-600 focus:bg-white dark:focus:bg-darkslate-900 focus:outline-none">
                                     <option value="ALL" selected>All Classes</option>
                                     <option value="EC">Executive Chair Car (EC)</option>
                                     <option value="CC">AC Chair Car (CC)</option>
@@ -373,21 +442,21 @@
                             </div>
 
                             <div>
-                                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                                    <i class="fa-solid fa-users text-railblue-600 mr-1"></i> Quota
+                                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                                    <i class="fa-solid fa-users text-railblue-600 dark:text-sky-400 mr-1"></i> Quota
                                 </label>
-                                <select id="filterQuota" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-navy-800 focus:ring-2 focus:ring-railblue-600 focus:bg-white focus:outline-none">
-                                    <option value="GN" selected>General Quota (GN)</option>
-                                    <option value="LD">Ladies Quota (LD)</option>
-                                    <option value="TQ">Tatkal Quota (TQ)</option>
-                                    <option value="PT">Premium Tatkal (PT)</option>
-                                    <option value="SS">Senior Citizen (SS)</option>
+                                <select id="filterQuota" class="w-full bg-slate-50 dark:bg-darkslate-950 border border-slate-300 dark:border-darkslate-800 rounded-lg px-3.5 py-2 text-xs font-bold text-navy-900 dark:text-slate-100 focus:ring-2 focus:ring-railblue-600 focus:bg-white dark:focus:bg-darkslate-900 focus:outline-none">
+                                    <option value="GN" selected>GENERAL (GN)</option>
+                                    <option value="LD">LADIES (LD)</option>
+                                    <option value="TQ">TATKAL (TQ)</option>
+                                    <option value="PT">PREMIUM TATKAL (PT)</option>
+                                    <option value="SS">LOWER BERTH / SR. CITIZEN (SS)</option>
                                 </select>
                             </div>
                         </div>
 
                         <!-- Checkboxes & Quick Route Shortcuts -->
-                        <div class="flex flex-wrap items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-600 gap-3">
+                        <div class="flex flex-wrap items-center justify-between pt-2 border-t border-slate-100 dark:border-darkslate-800 text-xs text-slate-600 dark:text-slate-300 gap-3">
                             <div class="flex items-center gap-4">
                                 <label class="flex items-center gap-2 cursor-pointer font-medium">
                                     <input type="checkbox" id="chkFlexible" class="w-4 h-4 rounded text-railblue-600 focus:ring-railblue-500">
@@ -399,24 +468,24 @@
                                 </label>
                             </div>
 
-                            <div class="flex items-center gap-2">
-                                <span class="text-slate-400 font-bold">Popular:</span>
-                                <button type="button" onclick="setQuickRoute('MAS', 'SBC')" class="text-railblue-600 hover:underline font-bold">MAS ➔ SBC</button>
-                                <span class="text-slate-300">&bull;</span>
-                                <button type="button" onclick="setQuickRoute('MAS', 'KPD')" class="text-railblue-600 hover:underline font-bold">MAS ➔ KPD</button>
-                                <span class="text-slate-300">&bull;</span>
-                                <button type="button" onclick="setQuickRoute('NDLS', 'CSTM')" class="text-railblue-600 hover:underline font-bold">NDLS ➔ CSTM</button>
-                                <span class="text-slate-300">&bull;</span>
-                                <button type="button" onclick="setQuickRoute('PDY', 'MAS')" class="text-railblue-600 hover:underline font-bold">PDY ➔ MAS</button>
+                            <div class="flex items-center gap-1.5 text-[11px]">
+                                <span class="text-slate-400 font-bold">Corridors:</span>
+                                <button type="button" onclick="setQuickRoute('MAS', 'SBC')" class="text-railblue-600 dark:text-sky-400 hover:underline font-bold">MAS ⇄ SBC</button>
+                                <span class="text-slate-300 dark:text-darkslate-700">&bull;</span>
+                                <button type="button" onclick="setQuickRoute('NDLS', 'CSTM')" class="text-railblue-600 dark:text-sky-400 hover:underline font-bold">NDLS ⇄ CSTM</button>
+                                <span class="text-slate-300 dark:text-darkslate-700">&bull;</span>
+                                <button type="button" onclick="setQuickRoute('MAS', 'HWH')" class="text-railblue-600 dark:text-sky-400 hover:underline font-bold">MAS ⇄ HWH</button>
+                                <span class="text-slate-300 dark:text-darkslate-700">&bull;</span>
+                                <button type="button" onclick="setQuickRoute('PDY', 'MAS')" class="text-railblue-600 dark:text-sky-400 hover:underline font-bold">PDY ⇄ MAS</button>
                             </div>
                         </div>
 
                         <!-- Action Buttons -->
                         <div class="flex items-center justify-end gap-3 pt-2">
-                            <button type="button" onclick="resetSearchForm()" class="px-5 py-3 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-600 font-bold text-xs transition">
-                                Reset
+                            <button type="button" onclick="resetSearchForm()" class="px-4 py-2.5 rounded-lg border border-slate-300 dark:border-darkslate-800 hover:bg-slate-100 dark:hover:bg-darkslate-800 text-slate-600 dark:text-slate-300 font-bold text-xs transition">
+                                Reset Form
                             </button>
-                            <button type="submit" id="searchSubmitBtn" class="bg-saffron-500 hover:bg-saffron-600 text-white font-extrabold text-xs px-8 py-3.5 rounded-xl shadow-md hover:shadow-lg transition flex items-center gap-2">
+                            <button type="submit" id="searchSubmitBtn" class="bg-saffron-500 hover:bg-saffron-600 text-white font-extrabold text-xs px-7 py-2.5 rounded-lg shadow-md hover:shadow-lg transition flex items-center gap-2">
                                 <i class="fa-solid fa-magnifying-glass"></i>
                                 <span>SEARCH TRAINS</span>
                             </button>
@@ -425,39 +494,39 @@
                 </div>
 
                 <!-- TAB CONTENT 2: PNR STATUS -->
-                <div id="content-pnr" class="hidden p-6 sm:p-8 space-y-6">
+                <div id="content-pnr" class="hidden p-5 sm:p-7 space-y-5">
                     <div class="max-w-xl mx-auto text-center space-y-3">
-                        <div class="w-12 h-12 bg-railblue-50 text-railblue-600 rounded-2xl flex items-center justify-center mx-auto text-xl">
+                        <div class="w-12 h-12 bg-railblue-50 dark:bg-darkslate-850 text-railblue-600 dark:text-sky-400 rounded-lg flex items-center justify-center mx-auto text-xl border border-railblue-200 dark:border-darkslate-700">
                             <i class="fa-solid fa-id-card"></i>
                         </div>
-                        <h3 class="text-xl font-bold text-navy-800">Check Passenger Name Record (PNR) Status</h3>
-                        <p class="text-xs text-slate-500">Enter the 10-digit PNR number printed on the top-left of your RailConnect ticket slip</p>
+                        <h3 class="text-lg font-bold text-navy-900 dark:text-white">Passenger Name Record (PNR) Verification</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Enter the 10-digit PNR number printed on the top-left corner of your ticket slip</p>
 
                         <form onsubmit="handlePnrSearch(event)" class="mt-4 flex gap-2">
-                            <input type="text" id="pnrInput" maxlength="10" placeholder="Enter 10-digit PNR number" required class="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-sm font-mono font-bold text-navy-800 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
-                            <button type="submit" id="pnrBtnSubmit" class="bg-railblue-600 hover:bg-railblue-700 text-white font-bold px-6 py-3 rounded-xl text-xs transition">
+                            <input type="text" id="pnrInput" maxlength="10" placeholder="Enter 10-digit PNR Number" required class="flex-1 bg-slate-50 dark:bg-darkslate-950 border border-slate-300 dark:border-darkslate-800 rounded-lg px-4 py-2.5 text-xs font-mono font-bold text-navy-900 dark:text-slate-100 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
+                            <button type="submit" id="pnrBtnSubmit" class="bg-railblue-600 hover:bg-railblue-700 text-white font-bold px-6 py-2.5 rounded-lg text-xs transition">
                                 Check Status
                             </button>
                         </form>
                     </div>
 
                     <!-- PNR Result Display Card -->
-                    <div id="pnrResultCard" class="hidden max-w-2xl mx-auto bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+                    <div id="pnrResultCard" class="hidden max-w-2xl mx-auto bg-slate-50 dark:bg-darkslate-950 border border-slate-200 dark:border-darkslate-800 rounded-lg p-5 space-y-4">
                         <!-- Populated by JS -->
                     </div>
                 </div>
 
                 <!-- TAB CONTENT 3: TRAIN SCHEDULE -->
-                <div id="content-schedule" class="hidden p-6 sm:p-8 space-y-6">
+                <div id="content-schedule" class="hidden p-5 sm:p-7 space-y-5">
                     <div class="max-w-xl mx-auto text-center space-y-3">
-                        <div class="w-12 h-12 bg-railblue-50 text-railblue-600 rounded-2xl flex items-center justify-center mx-auto text-xl">
+                        <div class="w-12 h-12 bg-railblue-50 dark:bg-darkslate-850 text-railblue-600 dark:text-sky-400 rounded-lg flex items-center justify-center mx-auto text-xl border border-railblue-200 dark:border-darkslate-700">
                             <i class="fa-solid fa-route"></i>
                         </div>
-                        <h3 class="text-xl font-bold text-navy-800">Train Route & Timetable Schedule</h3>
-                        <p class="text-xs text-slate-500">Lookup intermediate station halts, arrival/departure timings, and distances</p>
+                        <h3 class="text-lg font-bold text-navy-900 dark:text-white">Official Train Timetable & Route Enquiry</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Lookup intermediate station halts, arrival/departure schedules, and cumulative track distances</p>
 
                         <div class="flex gap-2">
-                            <select id="scheduleTrainSelect" class="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-xs font-bold text-navy-800 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
+                            <select id="scheduleTrainSelect" class="flex-1 bg-slate-50 dark:bg-darkslate-950 border border-slate-300 dark:border-darkslate-800 rounded-lg px-4 py-2.5 text-xs font-bold text-navy-900 dark:text-slate-100 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
                                 <option value="20607">20607 - Vande Bharat Express (MAS ➔ SBC)</option>
                                 <option value="12952">12952 - Mumbai Rajdhani Express (NDLS ➔ CSTM)</option>
                                 <option value="12007">12007 - Shatabdi Express (MAS ➔ SBC)</option>
@@ -465,30 +534,30 @@
                                 <option value="12615">12615 - Grand Trunk Express (MAS ➔ NDLS)</option>
                                 <option value="16116">16116 - Auroville Intercity Express (PDY ➔ MAS)</option>
                             </select>
-                            <button onclick="handleFetchSchedule()" class="bg-railblue-600 hover:bg-railblue-700 text-white font-bold px-6 py-3 rounded-xl text-xs transition">
-                                View Route
+                            <button onclick="handleFetchSchedule()" class="bg-railblue-600 hover:bg-railblue-700 text-white font-bold px-6 py-2.5 rounded-lg text-xs transition">
+                                View Schedule
                             </button>
                         </div>
                     </div>
 
-                    <div id="scheduleResultArea" class="hidden max-w-3xl mx-auto bg-slate-50 border border-slate-200 rounded-2xl p-5">
+                    <div id="scheduleResultArea" class="hidden max-w-3xl mx-auto bg-slate-50 dark:bg-darkslate-950 border border-slate-200 dark:border-darkslate-800 rounded-lg p-5">
                         <!-- Populated by JS -->
                     </div>
                 </div>
 
                 <!-- TAB CONTENT 4: SEAT AVAILABILITY -->
-                <div id="content-availability" class="hidden p-6 sm:p-8 space-y-6">
+                <div id="content-availability" class="hidden p-5 sm:p-7 space-y-5">
                     <div class="max-w-xl mx-auto text-center space-y-3">
-                        <div class="w-12 h-12 bg-railblue-50 text-railblue-600 rounded-2xl flex items-center justify-center mx-auto text-xl">
+                        <div class="w-12 h-12 bg-railblue-50 dark:bg-darkslate-850 text-railblue-600 dark:text-sky-400 rounded-lg flex items-center justify-center mx-auto text-xl border border-railblue-200 dark:border-darkslate-700">
                             <i class="fa-solid fa-chair"></i>
                         </div>
-                        <h3 class="text-xl font-bold text-navy-800">Live Seat Availability Inquiry</h3>
-                        <p class="text-xs text-slate-500">Query real-time berth availability across sleeper, 3A, 2A, 1A, and chair car classes</p>
-                        <p class="text-xs text-slate-600 bg-blue-50 border border-blue-200 p-3 rounded-xl">
-                            Use the <strong class="text-navy-800">Book Ticket</strong> tab to search between any pair of stations. Class availability and live seat status are displayed in real-time under each train.
+                        <h3 class="text-lg font-bold text-navy-900 dark:text-white">Real-Time Berth Availability</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Live inventory across Sleeper, AC 3-Tier, AC 2-Tier, First AC, and Chair Car quotas</p>
+                        <p class="text-xs text-slate-700 dark:text-slate-300 bg-blue-50 dark:bg-darkslate-850 border border-blue-200 dark:border-darkslate-700 p-3 rounded-lg">
+                            Use the <strong class="text-navy-900 dark:text-saffron-400">Book Ticket</strong> tab to search between any pair of stations. Live seat availability and fare breakdowns appear directly under each train card.
                         </p>
-                        <button onclick="switchBookingTab('book')" class="bg-saffron-500 hover:bg-saffron-600 text-white font-bold px-6 py-2.5 rounded-xl text-xs transition">
-                            Switch to Train Search
+                        <button onclick="switchBookingTab('book')" class="bg-saffron-500 hover:bg-saffron-600 text-white font-bold px-6 py-2.5 rounded-lg text-xs transition">
+                            Switch to Search Form
                         </button>
                     </div>
                 </div>
@@ -502,66 +571,66 @@
     <!-- 4. QUICK SERVICE TILES (IRCTC STYLE)                           -->
     <!-- ============================================================== -->
     <section class="py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-        <div class="text-center mb-8">
-            <span class="text-[10px] font-extrabold uppercase tracking-widest text-saffron-600 bg-saffron-50 px-3 py-1 rounded-full border border-saffron-200">Passenger Services</span>
-            <h2 class="text-2xl font-extrabold text-navy-800 mt-2">Essential Railway Utilities</h2>
-            <p class="text-xs text-slate-500">Quickly access key railway reservation services and booking tools</p>
+        <div class="text-center mb-6">
+            <span class="text-[10px] font-extrabold uppercase tracking-widest text-saffron-600 dark:text-saffron-400 bg-saffron-50 dark:bg-darkslate-850 px-3 py-1 rounded border border-saffron-200 dark:border-saffron-900/60">Passenger Services</span>
+            <h2 class="text-xl sm:text-2xl font-extrabold text-navy-900 dark:text-white mt-2">Essential Railway Utilities</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Direct shortcuts to official e-ticketing and passenger information services</p>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
             
             <!-- Tile 1: PNR Status -->
-            <button onclick="switchBookingTab('pnr'); scrollToBooking();" class="p-4 bg-white rounded-2xl border border-slate-200 hover:border-railblue-500 hover:shadow-md transition text-center group flex flex-col items-center">
-                <div class="w-12 h-12 rounded-xl bg-blue-50 text-railblue-600 flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition">
+            <button onclick="switchBookingTab('pnr'); scrollToBooking();" class="p-4 bg-white dark:bg-darkslate-900 rounded-lg border border-slate-200 dark:border-darkslate-800 hover:border-railblue-500 dark:hover:border-sky-500 hover:shadow-md transition text-center group flex flex-col items-center">
+                <div class="w-11 h-11 rounded-lg bg-blue-50 dark:bg-darkslate-850 text-railblue-600 dark:text-sky-400 flex items-center justify-center text-lg mb-2.5 group-hover:scale-105 transition border border-blue-100 dark:border-darkslate-800">
                     <i class="fa-solid fa-id-card"></i>
                 </div>
-                <span class="text-xs font-bold text-slate-800 group-hover:text-railblue-600">PNR Status</span>
+                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-railblue-600 dark:group-hover:text-sky-400">PNR Status</span>
                 <span class="text-[10px] text-slate-400 mt-0.5">Live Verification</span>
             </button>
 
             <!-- Tile 2: Train Schedule -->
-            <button onclick="switchBookingTab('schedule'); scrollToBooking();" class="p-4 bg-white rounded-2xl border border-slate-200 hover:border-railblue-500 hover:shadow-md transition text-center group flex flex-col items-center">
-                <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition">
+            <button onclick="switchBookingTab('schedule'); scrollToBooking();" class="p-4 bg-white dark:bg-darkslate-900 rounded-lg border border-slate-200 dark:border-darkslate-800 hover:border-railblue-500 dark:hover:border-sky-500 hover:shadow-md transition text-center group flex flex-col items-center">
+                <div class="w-11 h-11 rounded-lg bg-amber-50 dark:bg-darkslate-850 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg mb-2.5 group-hover:scale-105 transition border border-amber-100 dark:border-darkslate-800">
                     <i class="fa-solid fa-route"></i>
                 </div>
-                <span class="text-xs font-bold text-slate-800 group-hover:text-railblue-600">Train Schedule</span>
+                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-railblue-600 dark:group-hover:text-sky-400">Train Schedule</span>
                 <span class="text-[10px] text-slate-400 mt-0.5">Intermediate Stops</span>
             </button>
 
             <!-- Tile 3: Seat Availability -->
-            <button onclick="scrollToBooking();" class="p-4 bg-white rounded-2xl border border-slate-200 hover:border-railblue-500 hover:shadow-md transition text-center group flex flex-col items-center">
-                <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition">
+            <button onclick="scrollToBooking();" class="p-4 bg-white dark:bg-darkslate-900 rounded-lg border border-slate-200 dark:border-darkslate-800 hover:border-railblue-500 dark:hover:border-sky-500 hover:shadow-md transition text-center group flex flex-col items-center">
+                <div class="w-11 h-11 rounded-lg bg-emerald-50 dark:bg-darkslate-850 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg mb-2.5 group-hover:scale-105 transition border border-emerald-100 dark:border-darkslate-800">
                     <i class="fa-solid fa-chair"></i>
                 </div>
-                <span class="text-xs font-bold text-slate-800 group-hover:text-railblue-600">Seat Availability</span>
+                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-railblue-600 dark:group-hover:text-sky-400">Seat Availability</span>
                 <span class="text-[10px] text-slate-400 mt-0.5">Real-time Berths</span>
             </button>
 
             <!-- Tile 4: My Bookings -->
-            <a href="/passenger" class="p-4 bg-white rounded-2xl border border-slate-200 hover:border-railblue-500 hover:shadow-md transition text-center group flex flex-col items-center">
-                <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition">
+            <a href="/passenger" class="p-4 bg-white dark:bg-darkslate-900 rounded-lg border border-slate-200 dark:border-darkslate-800 hover:border-railblue-500 dark:hover:border-sky-500 hover:shadow-md transition text-center group flex flex-col items-center">
+                <div class="w-11 h-11 rounded-lg bg-indigo-50 dark:bg-darkslate-850 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-lg mb-2.5 group-hover:scale-105 transition border border-indigo-100 dark:border-darkslate-800">
                     <i class="fa-solid fa-ticket"></i>
                 </div>
-                <span class="text-xs font-bold text-slate-800 group-hover:text-railblue-600">My Bookings</span>
+                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-railblue-600 dark:group-hover:text-sky-400">My Bookings</span>
                 <span class="text-[10px] text-slate-400 mt-0.5">E-Ticket History</span>
             </a>
 
             <!-- Tile 5: Cancel Ticket -->
-            <a href="/passenger" class="p-4 bg-white rounded-2xl border border-slate-200 hover:border-railblue-500 hover:shadow-md transition text-center group flex flex-col items-center">
-                <div class="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition">
+            <a href="/passenger" class="p-4 bg-white dark:bg-darkslate-900 rounded-lg border border-slate-200 dark:border-darkslate-800 hover:border-railblue-500 dark:hover:border-sky-500 hover:shadow-md transition text-center group flex flex-col items-center">
+                <div class="w-11 h-11 rounded-lg bg-rose-50 dark:bg-darkslate-850 text-rose-600 dark:text-rose-400 flex items-center justify-center text-lg mb-2.5 group-hover:scale-105 transition border border-rose-100 dark:border-darkslate-800">
                     <i class="fa-solid fa-ban"></i>
                 </div>
-                <span class="text-xs font-bold text-slate-800 group-hover:text-railblue-600">Cancel Ticket</span>
+                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-railblue-600 dark:group-hover:text-sky-400">Cancel Ticket</span>
                 <span class="text-[10px] text-slate-400 mt-0.5">Instant Refund</span>
             </a>
 
             <!-- Tile 6: Help & Grievance -->
-            <div class="p-4 bg-white rounded-2xl border border-slate-200 hover:border-railblue-500 hover:shadow-md transition text-center group flex flex-col items-center cursor-pointer" onclick="alert('Rail Madad Helpline: Dial 139 for immediate assistance.')">
-                <div class="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center text-xl mb-3 group-hover:scale-110 transition">
+            <div class="p-4 bg-white dark:bg-darkslate-900 rounded-lg border border-slate-200 dark:border-darkslate-800 hover:border-railblue-500 dark:hover:border-sky-500 hover:shadow-md transition text-center group flex flex-col items-center cursor-pointer" onclick="alert('Rail Madad Helpline: Dial 139 for immediate passenger assistance.')">
+                <div class="w-11 h-11 rounded-lg bg-sky-50 dark:bg-darkslate-850 text-sky-600 dark:text-sky-400 flex items-center justify-center text-lg mb-2.5 group-hover:scale-105 transition border border-sky-100 dark:border-darkslate-800">
                     <i class="fa-solid fa-headset"></i>
                 </div>
-                <span class="text-xs font-bold text-slate-800 group-hover:text-railblue-600">Rail Madad 139</span>
-                <span class="text-[10px] text-slate-400 mt-0.5">Passenger Help</span>
+                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-railblue-600 dark:group-hover:text-sky-400">Rail Madad 139</span>
+                <span class="text-[10px] text-slate-400 mt-0.5">24x7 Assistance</span>
             </div>
 
         </div>
@@ -574,25 +643,25 @@
     <section id="searchResultsSection" class="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
         
         <!-- Search Summary Ribbon -->
-        <div class="bg-navy-800 text-white rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 shadow-md mb-6">
+        <div class="bg-navy-900 dark:bg-darkslate-900 text-white rounded-lg p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 shadow-md mb-6 border border-navy-800 dark:border-darkslate-800">
             <div>
                 <div class="flex items-center gap-2 text-xs text-saffron-400 font-bold uppercase tracking-wider">
                     <i class="fa-solid fa-arrow-right-arrow-left"></i>
-                    <span>Search Results Summary</span>
+                    <span>Official PRS Train Availability Results</span>
                 </div>
                 <h3 class="text-lg sm:text-xl font-extrabold mt-1" id="summaryRouteText">
                     Chennai Central (MAS) ➔ KSR Bengaluru (SBC)
                 </h3>
                 <p class="text-xs text-slate-300 font-medium" id="summaryDetailsText">
-                    Showing available scheduled express services
+                    Showing available scheduled express and superfast services
                 </p>
             </div>
 
             <div class="flex items-center gap-3">
-                <span class="text-xs font-bold bg-white/10 px-3 py-1.5 rounded-xl border border-white/20" id="summaryCountBadge">
+                <span class="text-xs font-bold bg-white/10 px-3 py-1.5 rounded-lg border border-white/20 font-mono" id="summaryCountBadge">
                     2 Trains Found
                 </span>
-                <button onclick="scrollToBooking()" class="bg-saffron-500 hover:bg-saffron-600 text-white font-bold text-xs px-4 py-2 rounded-xl transition shadow flex items-center gap-1.5">
+                <button onclick="scrollToBooking()" class="bg-saffron-500 hover:bg-saffron-600 text-white font-bold text-xs px-4 py-2 rounded-lg transition shadow flex items-center gap-1.5">
                     <i class="fa-solid fa-sliders"></i> Modify Search
                 </button>
             </div>
@@ -602,44 +671,44 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
             
             <!-- Left Filter Sidebar -->
-            <aside class="lg:col-span-3 space-y-5">
-                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-5">
-                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                        <span class="font-extrabold text-xs uppercase tracking-wider text-navy-800 flex items-center gap-1.5">
+            <aside class="lg:col-span-3 space-y-4">
+                <div class="bg-white dark:bg-darkslate-900 rounded-lg border border-slate-200 dark:border-darkslate-800 p-4 sm:p-5 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-darkslate-800">
+                        <span class="font-extrabold text-xs uppercase tracking-wider text-navy-900 dark:text-white flex items-center gap-1.5">
                             <i class="fa-solid fa-filter text-saffron-500"></i> Filters
                         </span>
-                        <button onclick="resetFilters()" class="text-[11px] text-railblue-600 font-bold hover:underline">Clear All</button>
+                        <button onclick="resetFilters()" class="text-[11px] text-railblue-600 dark:text-sky-400 font-bold hover:underline">Clear All</button>
                     </div>
 
                     <!-- Departure Time Slots -->
                     <div>
-                        <span class="text-xs font-bold text-slate-700 block mb-2">Departure Time</span>
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">Departure Time</span>
                         <div class="grid grid-cols-2 gap-2 text-xs">
-                            <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                            <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 dark:border-darkslate-800 hover:bg-slate-50 dark:hover:bg-darkslate-850 cursor-pointer">
                                 <input type="checkbox" onchange="applyFilters()" value="early" class="filter-time rounded text-railblue-600">
                                 <div class="text-[10px]">
-                                    <div class="font-bold text-slate-800">Early Morning</div>
+                                    <div class="font-bold text-slate-800 dark:text-slate-200">Early Morning</div>
                                     <span class="text-slate-400">00:00 - 06:00</span>
                                 </div>
                             </label>
-                            <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                            <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 dark:border-darkslate-800 hover:bg-slate-50 dark:hover:bg-darkslate-850 cursor-pointer">
                                 <input type="checkbox" onchange="applyFilters()" value="morning" class="filter-time rounded text-railblue-600">
                                 <div class="text-[10px]">
-                                    <div class="font-bold text-slate-800">Morning</div>
+                                    <div class="font-bold text-slate-800 dark:text-slate-200">Morning</div>
                                     <span class="text-slate-400">06:00 - 12:00</span>
                                 </div>
                             </label>
-                            <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                            <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 dark:border-darkslate-800 hover:bg-slate-50 dark:hover:bg-darkslate-850 cursor-pointer">
                                 <input type="checkbox" onchange="applyFilters()" value="afternoon" class="filter-time rounded text-railblue-600">
                                 <div class="text-[10px]">
-                                    <div class="font-bold text-slate-800">Mid Day</div>
+                                    <div class="font-bold text-slate-800 dark:text-slate-200">Mid Day</div>
                                     <span class="text-slate-400">12:00 - 18:00</span>
                                 </div>
                             </label>
-                            <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                            <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-200 dark:border-darkslate-800 hover:bg-slate-50 dark:hover:bg-darkslate-850 cursor-pointer">
                                 <input type="checkbox" onchange="applyFilters()" value="night" class="filter-time rounded text-railblue-600">
                                 <div class="text-[10px]">
-                                    <div class="font-bold text-slate-800">Night</div>
+                                    <div class="font-bold text-slate-800 dark:text-slate-200">Night</div>
                                     <span class="text-slate-400">18:00 - 24:00</span>
                                 </div>
                             </label>
@@ -647,9 +716,9 @@
                     </div>
 
                     <!-- Travel Classes Filter -->
-                    <div class="pt-3 border-t border-slate-100">
-                        <span class="text-xs font-bold text-slate-700 block mb-2">Class Options</span>
-                        <div class="space-y-1.5 text-xs text-slate-600">
+                    <div class="pt-3 border-t border-slate-100 dark:border-darkslate-800">
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">Class Options</span>
+                        <div class="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
                             <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" onchange="applyFilters()" value="EC" class="filter-class rounded text-railblue-600">
                                 <span>Executive Chair Car (EC)</span>
@@ -678,9 +747,9 @@
                     </div>
 
                     <!-- Train Type Filter -->
-                    <div class="pt-3 border-t border-slate-100">
-                        <span class="text-xs font-bold text-slate-700 block mb-2">Train Speed Category</span>
-                        <div class="space-y-1.5 text-xs text-slate-600">
+                    <div class="pt-3 border-t border-slate-100 dark:border-darkslate-800">
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-2">Train Speed Category</span>
+                        <div class="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
                             <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" onchange="applyFilters()" value="vande" class="filter-type rounded text-railblue-600">
                                 <span>Vande Bharat Express</span>
@@ -712,59 +781,59 @@
     <!-- ============================================================== -->
     <!-- 6. POPULAR ROUTES & FEATURED TRAINS SECTION                    -->
     <!-- ============================================================== -->
-    <section id="popularSection" class="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-2 mb-6">
+    <section id="popularSection" class="py-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-200 dark:border-darkslate-800 gap-2 mb-5">
             <div>
-                <span class="text-[10px] font-extrabold uppercase tracking-widest text-saffron-600 bg-saffron-50 px-3 py-1 rounded-full border border-saffron-200">Flagship Fleet</span>
-                <h2 class="text-2xl font-extrabold text-navy-800 mt-2">Popular Indian Railway Routes</h2>
-                <p class="text-xs text-slate-500">Major express corridors and daily scheduled express routes</p>
+                <span class="text-[10px] font-extrabold uppercase tracking-widest text-saffron-600 dark:text-saffron-400 bg-saffron-50 dark:bg-darkslate-850 px-2.5 py-0.5 rounded border border-saffron-200 dark:border-saffron-900/60">Flagship Fleet</span>
+                <h2 class="text-xl sm:text-2xl font-extrabold text-navy-900 dark:text-white mt-1">Major Indian Railway Corridors</h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400">High-speed express routes and daily scheduled trunk corridors</p>
             </div>
-            <a href="#bookingSection" class="text-xs font-bold text-railblue-600 hover:text-railblue-800 flex items-center gap-1">
+            <a href="#bookingSection" class="text-xs font-bold text-railblue-600 dark:text-sky-400 hover:underline flex items-center gap-1">
                 <span>Search All Trains</span> <i class="fa-solid fa-arrow-right"></i>
             </a>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             
             <!-- Route Card 1: Chennai to Bengaluru -->
-            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition">
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <span class="text-xs font-extrabold text-navy-800">MAS ➔ SBC</span>
-                    <span class="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded border border-emerald-200">High Frequency</span>
+            <div class="bg-white dark:bg-darkslate-900 rounded-lg border border-slate-200 dark:border-darkslate-800 p-5 shadow-sm hover:shadow-md transition">
+                <div class="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-darkslate-800">
+                    <span class="text-xs font-extrabold text-navy-900 dark:text-white font-mono">MAS ➔ SBC</span>
+                    <span class="text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">High Frequency</span>
                 </div>
-                <h4 class="text-sm font-bold text-slate-800 mt-3">Chennai Central to KSR Bengaluru</h4>
-                <p class="text-xs text-slate-500 mt-1">Vande Bharat Express (#20607), Shatabdi Express (#12007)</p>
-                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <span class="text-xs font-mono font-bold text-railblue-700">Distance: 362 km</span>
-                    <button onclick="setQuickRoute('MAS', 'SBC')" class="text-xs text-saffron-600 hover:text-saffron-700 font-bold">Book Route &rarr;</button>
+                <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 mt-2.5">Chennai Central to KSR Bengaluru</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Vande Bharat Express (#20607), Shatabdi Express (#12007)</p>
+                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-darkslate-800 flex items-center justify-between">
+                    <span class="text-xs font-mono font-bold text-railblue-700 dark:text-sky-400">Distance: 362 km</span>
+                    <button onclick="setQuickRoute('MAS', 'SBC')" class="text-xs text-saffron-600 dark:text-saffron-400 hover:underline font-bold">Book Route &rarr;</button>
                 </div>
             </div>
 
             <!-- Route Card 2: New Delhi to Mumbai -->
-            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition">
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <span class="text-xs font-extrabold text-navy-800">NDLS ➔ CSTM</span>
-                    <span class="text-[10px] font-bold bg-blue-50 text-railblue-700 px-2 py-0.5 rounded border border-blue-200">Superfast Trunk</span>
+            <div class="bg-white dark:bg-darkslate-900 rounded-lg border border-slate-200 dark:border-darkslate-800 p-5 shadow-sm hover:shadow-md transition">
+                <div class="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-darkslate-800">
+                    <span class="text-xs font-extrabold text-navy-900 dark:text-white font-mono">NDLS ➔ CSTM</span>
+                    <span class="text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-railblue-700 dark:text-sky-300 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800">Superfast Trunk</span>
                 </div>
-                <h4 class="text-sm font-bold text-slate-800 mt-3">New Delhi to Mumbai CSMT</h4>
-                <p class="text-xs text-slate-500 mt-1">Mumbai Rajdhani Express (#12952) via Vadodara & Surat</p>
-                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <span class="text-xs font-mono font-bold text-railblue-700">Distance: 1384 km</span>
-                    <button onclick="setQuickRoute('NDLS', 'CSTM')" class="text-xs text-saffron-600 hover:text-saffron-700 font-bold">Book Route &rarr;</button>
+                <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 mt-2.5">New Delhi to Mumbai CSMT</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Mumbai Rajdhani Express (#12952) via Vadodara & Surat</p>
+                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-darkslate-800 flex items-center justify-between">
+                    <span class="text-xs font-mono font-bold text-railblue-700 dark:text-sky-400">Distance: 1384 km</span>
+                    <button onclick="setQuickRoute('NDLS', 'CSTM')" class="text-xs text-saffron-600 dark:text-saffron-400 hover:underline font-bold">Book Route &rarr;</button>
                 </div>
             </div>
 
             <!-- Route Card 3: Chennai to Howrah -->
-            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition">
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <span class="text-xs font-extrabold text-navy-800">MAS ➔ HWH</span>
-                    <span class="text-[10px] font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded border border-amber-200">East Coast Link</span>
+            <div class="bg-white dark:bg-darkslate-900 rounded-lg border border-slate-200 dark:border-darkslate-800 p-5 shadow-sm hover:shadow-md transition">
+                <div class="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-darkslate-800">
+                    <span class="text-xs font-extrabold text-navy-900 dark:text-white font-mono">MAS ➔ HWH</span>
+                    <span class="text-[10px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">East Coast Link</span>
                 </div>
-                <h4 class="text-sm font-bold text-slate-800 mt-3">Chennai Central to Howrah Jn</h4>
-                <p class="text-xs text-slate-500 mt-1">Howrah Mail (#12840) via Vijayawada Junction</p>
-                <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <span class="text-xs font-mono font-bold text-railblue-700">Distance: 1661 km</span>
-                    <button onclick="setQuickRoute('MAS', 'HWH')" class="text-xs text-saffron-600 hover:text-saffron-700 font-bold">Book Route &rarr;</button>
+                <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 mt-2.5">Chennai Central to Howrah Jn</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Howrah Mail (#12840) via Vijayawada Junction</p>
+                <div class="mt-4 pt-3 border-t border-slate-100 dark:border-darkslate-800 flex items-center justify-between">
+                    <span class="text-xs font-mono font-bold text-railblue-700 dark:text-sky-400">Distance: 1661 km</span>
+                    <button onclick="setQuickRoute('MAS', 'HWH')" class="text-xs text-saffron-600 dark:text-saffron-400 hover:underline font-bold">Book Route &rarr;</button>
                 </div>
             </div>
 
@@ -775,15 +844,15 @@
     <!-- ============================================================== -->
     <!-- 7. PASSENGER BOOKING MODAL (ACID TRANSACTION FORM)             -->
     <!-- ============================================================== -->
-    <div id="bookingModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-navy-950/70 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden relative">
+    <div id="bookingModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-navy-950/80 backdrop-blur-sm">
+        <div class="bg-white dark:bg-darkslate-900 w-full max-w-xl rounded-xl shadow-2xl border border-slate-200 dark:border-darkslate-800 overflow-hidden relative">
             
             <!-- Modal Header -->
-            <div class="bg-navy-800 p-5 text-white flex items-center justify-between">
+            <div class="bg-navy-900 dark:bg-darkslate-950 p-4 sm:p-5 text-white flex items-center justify-between border-b border-navy-800 dark:border-darkslate-800">
                 <div>
                     <span class="text-[10px] text-saffron-400 font-bold uppercase tracking-wider">ACID Passenger Reservation</span>
-                    <h3 class="text-lg font-extrabold" id="bookingTrainTitle">Vande Bharat Express (#20607)</h3>
-                    <p class="text-xs text-slate-300" id="bookingRouteSubtitle">MAS ➔ SBC &bull; Class: AC Chair Car (CC)</p>
+                    <h3 class="text-base sm:text-lg font-extrabold" id="bookingTrainTitle">Vande Bharat Express (#20607)</h3>
+                    <p class="text-xs text-slate-300 font-medium" id="bookingRouteSubtitle">MAS ➔ SBC &bull; Class: AC Chair Car (CC)</p>
                 </div>
                 <button onclick="closeBookingModal()" class="text-slate-400 hover:text-white p-2 rounded-lg">
                     <i class="fa-solid fa-xmark text-lg"></i>
@@ -791,49 +860,49 @@
             </div>
 
             <!-- Modal Body Form -->
-            <div class="p-6">
+            <div class="p-5 sm:p-6">
                 
                 <!-- Passenger details input form -->
                 <form id="passengerBookingForm" onsubmit="handleConfirmBooking(event)" class="space-y-4">
                     
-                    <div class="bg-railblue-50 border border-railblue-100 p-3.5 rounded-2xl flex items-center justify-between">
+                    <div class="bg-railblue-50 dark:bg-darkslate-850 border border-railblue-100 dark:border-darkslate-800 p-3 rounded-lg flex items-center justify-between">
                         <div>
-                            <span class="text-[10px] uppercase font-bold text-slate-400 block">Class Base Fare</span>
-                            <strong class="text-lg font-black text-navy-800" id="modalFareText">₹950.00</strong>
+                            <span class="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">Payable Base Fare</span>
+                            <strong class="text-lg font-black text-navy-900 dark:text-white font-mono" id="modalFareText">₹950.00</strong>
                         </div>
                         <div class="text-right">
-                            <span class="text-[10px] text-slate-400 block font-bold">Booking Status</span>
-                            <span class="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">Guaranteed Berth</span>
+                            <span class="text-[10px] text-slate-500 dark:text-slate-400 block font-bold">Quota Status</span>
+                            <span class="text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-800">Guaranteed Berth</span>
                         </div>
                     </div>
 
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-navy-800 uppercase tracking-wider">Passenger Manifest</span>
-                            <span class="text-[10px] text-slate-400 font-medium">Valid Government ID proof required on board</span>
+                            <span class="text-xs font-bold text-navy-900 dark:text-white uppercase tracking-wider">Passenger Manifest</span>
+                            <span class="text-[10px] text-slate-400 font-medium">Valid Government ID required on board</span>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Full Passenger Name</label>
-                            <input type="text" id="passName" required placeholder="As printed on Aadhaar / Passport" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-railblue-600 focus:bg-white focus:outline-none">
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Full Passenger Name</label>
+                            <input type="text" id="passName" required placeholder="As printed on Aadhaar / Passport" class="w-full bg-slate-50 dark:bg-darkslate-950 border border-slate-300 dark:border-darkslate-800 rounded-lg px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-railblue-600 focus:bg-white dark:focus:bg-darkslate-900 focus:outline-none">
                         </div>
 
                         <div class="grid grid-cols-3 gap-2">
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Age</label>
-                                <input type="number" id="passAge" required min="5" max="110" value="25" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Age</label>
+                                <input type="number" id="passAge" required min="5" max="110" value="25" class="w-full bg-slate-50 dark:bg-darkslate-950 border border-slate-300 dark:border-darkslate-800 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Gender</label>
-                                <select id="passGender" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Gender</label>
+                                <select id="passGender" class="w-full bg-slate-50 dark:bg-darkslate-950 border border-slate-300 dark:border-darkslate-800 rounded-lg px-2.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
                                     <option value="Male">Male</option>
                                     <option value="Female">Female</option>
                                     <option value="Transgender">Transgender</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Berth Preference</label>
-                                <select id="passBerth" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Berth Choice</label>
+                                <select id="passBerth" class="w-full bg-slate-50 dark:bg-darkslate-950 border border-slate-300 dark:border-darkslate-800 rounded-lg px-2.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
                                     <option value="Window">Window</option>
                                     <option value="Aisle">Aisle</option>
                                     <option value="Lower">Lower</option>
@@ -844,54 +913,54 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Contact Mobile Number (for SMS & PNR Updates)</label>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Contact Mobile Number (for SMS & PNR Updates)</label>
                             <div class="relative">
                                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center font-mono text-xs text-slate-400">+91</span>
-                                <input type="tel" id="bookingPhone" required maxlength="10" pattern="[6-9][0-9]{9}" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10);" placeholder="9876543210" class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-12 pr-3 py-2.5 text-xs font-mono font-bold text-slate-800 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
+                                <input type="tel" id="bookingPhone" required maxlength="10" pattern="[6-9][0-9]{9}" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10);" placeholder="9876543210" class="w-full bg-slate-50 dark:bg-darkslate-950 border border-slate-300 dark:border-darkslate-800 rounded-lg pl-12 pr-3 py-2 text-xs font-mono font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
                             </div>
                         </div>
                     </div>
 
-                    <button type="submit" id="confirmBookingBtn" class="w-full bg-railgreen-600 hover:bg-railgreen-700 text-white font-extrabold text-xs py-3.5 rounded-xl shadow transition flex items-center justify-center gap-2 mt-2">
+                    <button type="submit" id="confirmBookingBtn" class="w-full bg-railgreen-600 hover:bg-railgreen-700 text-white font-extrabold text-xs py-3 rounded-lg shadow transition flex items-center justify-center gap-2 mt-2">
                         <i class="fa-solid fa-lock"></i>
                         <span>PAY & CONFIRM RESERVATION</span>
                     </button>
                 </form>
 
                 <!-- Booking Success Screen -->
-                <div id="bookingSuccessBox" class="hidden text-center space-y-4 py-4">
-                    <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl mx-auto">
+                <div id="bookingSuccessBox" class="hidden text-center space-y-4 py-2">
+                    <div class="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-2xl mx-auto border border-emerald-300 dark:border-emerald-800">
                         <i class="fa-solid fa-circle-check"></i>
                     </div>
                     <div>
-                        <h4 class="text-xl font-extrabold text-navy-800">Booking Confirmed!</h4>
-                        <p class="text-xs text-slate-500">Your electronic reservation slip is issued and saved to database</p>
+                        <h4 class="text-lg font-extrabold text-navy-900 dark:text-white">Ticket Confirmed!</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Your electronic reservation slip has been issued & saved</p>
                     </div>
 
-                    <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 text-left text-xs space-y-2">
-                        <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                    <div class="bg-slate-50 dark:bg-darkslate-950 rounded-lg p-4 border border-slate-200 dark:border-darkslate-800 text-left text-xs space-y-2">
+                        <div class="flex items-center justify-between border-b border-slate-200 dark:border-darkslate-800 pb-2">
                             <span class="text-slate-400 font-bold uppercase text-[10px]">PNR Number</span>
-                            <span class="font-mono text-base font-black text-railblue-700" id="succPnr">8249102847</span>
+                            <span class="font-mono text-base font-black text-railblue-700 dark:text-sky-400" id="succPnr">8249102847</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-slate-500 font-semibold">Train:</span>
-                            <strong id="succTrain" class="text-slate-800">20607 Vande Bharat Express</strong>
+                            <span class="text-slate-500 dark:text-slate-400 font-semibold">Train:</span>
+                            <strong id="succTrain" class="text-slate-800 dark:text-slate-200">20607 Vande Bharat Express</strong>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-slate-500 font-semibold">Passenger:</span>
-                            <strong id="succPassenger" class="text-slate-800">Passenger Name</strong>
+                            <span class="text-slate-500 dark:text-slate-400 font-semibold">Passenger:</span>
+                            <strong id="succPassenger" class="text-slate-800 dark:text-slate-200">Passenger Name</strong>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-slate-500 font-semibold">Seat & Coach:</span>
-                            <strong id="succBerth" class="text-emerald-700 font-bold">CNF (C4-42)</strong>
+                            <span class="text-slate-500 dark:text-slate-400 font-semibold">Seat & Coach:</span>
+                            <strong id="succBerth" class="text-emerald-700 dark:text-emerald-400 font-bold">CNF (C4-42)</strong>
                         </div>
                     </div>
 
                     <div class="flex gap-2 pt-2">
-                        <a href="/passenger" class="flex-1 bg-navy-800 hover:bg-navy-950 text-white font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-2 transition">
+                        <a href="/passenger" class="flex-1 bg-navy-900 hover:bg-navy-950 text-white font-bold py-2.5 rounded-lg text-xs flex items-center justify-center gap-2 transition border border-navy-800">
                             <i class="fa-solid fa-ticket"></i> View in Dashboard
                         </a>
-                        <button onclick="closeBookingModal()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-3 rounded-xl text-xs transition">
+                        <button onclick="closeBookingModal()" class="flex-1 bg-slate-200 dark:bg-darkslate-800 hover:bg-slate-300 dark:hover:bg-darkslate-700 text-slate-800 dark:text-slate-200 font-bold py-2.5 rounded-lg text-xs transition">
                             Close
                         </button>
                     </div>
@@ -905,116 +974,116 @@
     <!-- ============================================================== -->
     <!-- 8. PASSENGER AUTHENTICATION MODAL (LOGIN & REGISTER)           -->
     <!-- ============================================================== -->
-    <div id="authModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-navy-950/70 backdrop-blur-sm">
-        <div class="bg-white w-full max-w-md p-6 sm:p-8 rounded-3xl shadow-2xl border border-slate-200 relative">
-            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center transition">
+    <div id="authModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-navy-950/80 backdrop-blur-sm">
+        <div class="bg-white dark:bg-darkslate-900 w-full max-w-md p-6 sm:p-7 rounded-xl shadow-2xl border border-slate-200 dark:border-darkslate-800 relative">
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 dark:hover:text-white w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-darkslate-800 flex items-center justify-center transition">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
 
             <!-- Brand header in modal -->
-            <div class="flex items-center gap-2.5 mb-2 text-navy-800">
-                <div class="w-8 h-8 rounded-lg bg-navy-800 text-white flex items-center justify-center text-sm">
-                    <i class="fa-solid fa-train text-saffron-400"></i>
+            <div class="flex items-center gap-2.5 mb-1.5 text-navy-900 dark:text-white">
+                <div class="w-8 h-8 rounded-lg bg-navy-900 dark:bg-darkslate-800 text-white flex items-center justify-center text-sm border border-navy-800 dark:border-darkslate-700">
+                    <i class="fa-solid fa-train text-saffron-500"></i>
                 </div>
                 <h3 class="text-lg font-black tracking-tight">Rail<span class="text-saffron-500">Connect</span></h3>
             </div>
-            <p class="text-xs text-slate-500 mb-4">Passenger Reservation & Authentication Gateway</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Passenger Reservation & Authentication Gateway</p>
 
             <!-- Tabs -->
-            <div class="flex mb-5 border-b border-slate-200 text-xs font-bold">
-                <button id="loginTab" onclick="showLogin()" class="w-1/2 py-2.5 text-railblue-600 border-b-2 border-railblue-600 flex items-center justify-center gap-1.5 transition">
+            <div class="flex mb-4 border-b border-slate-200 dark:border-darkslate-800 text-xs font-bold">
+                <button id="loginTab" onclick="showLogin()" class="w-1/2 py-2.5 text-railblue-600 dark:text-sky-400 border-b-2 border-railblue-600 dark:border-sky-400 flex items-center justify-center gap-1.5 transition">
                     <i class="fa-solid fa-right-to-bracket"></i> Sign In
                 </button>
-                <button id="registerTab" onclick="showRegister()" class="w-1/2 py-2.5 text-slate-500 hover:text-slate-800 flex items-center justify-center gap-1.5 transition">
+                <button id="registerTab" onclick="showRegister()" class="w-1/2 py-2.5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white flex items-center justify-center gap-1.5 transition">
                     <i class="fa-solid fa-user-plus"></i> Register
                 </button>
             </div>
 
             <!-- LOGIN FORM -->
-            <form id="loginForm" class="space-y-3.5">
+            <form id="loginForm" class="space-y-3">
                 <div>
-                    <label class="block text-[11px] font-bold uppercase text-slate-600 mb-1">Email Address</label>
-                    <input type="email" id="loginEmail" required placeholder="user@example.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
+                    <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">Email Address</label>
+                    <input type="email" id="loginEmail" required placeholder="user@example.com" class="w-full bg-slate-50 dark:bg-darkslate-950 border border-slate-300 dark:border-darkslate-800 rounded-lg px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
                 </div>
 
                 <div>
-                    <label class="block text-[11px] font-bold uppercase text-slate-600 mb-1">Password</label>
-                    <input type="password" id="loginPassword" required placeholder="Enter password" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
+                    <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">Password</label>
+                    <input type="password" id="loginPassword" required placeholder="Enter password" class="w-full bg-slate-50 dark:bg-darkslate-950 border border-slate-300 dark:border-darkslate-800 rounded-lg px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
                 </div>
 
                 <!-- 1-Click Demo Accounts for Examination -->
-                <div class="bg-slate-50 border border-slate-200 p-2.5 rounded-xl text-xs space-y-1.5">
-                    <span class="text-[10px] text-slate-400 font-bold uppercase block">1-Click Test Accounts:</span>
+                <div class="bg-slate-50 dark:bg-darkslate-950 border border-slate-200 dark:border-darkslate-800 p-2.5 rounded-lg text-xs space-y-1.5">
+                    <span class="text-[10px] text-slate-400 font-bold uppercase block">1-Click Test Credentials:</span>
                     <div class="flex gap-2">
-                        <button type="button" onclick="fillTestAccount('passenger')" class="flex-1 bg-white hover:bg-railblue-50 text-railblue-700 border border-railblue-200 py-1 px-2 rounded-lg text-[11px] font-bold transition">
+                        <button type="button" onclick="fillTestAccount('passenger')" class="flex-1 bg-white dark:bg-darkslate-900 hover:bg-railblue-50 dark:hover:bg-darkslate-850 text-railblue-700 dark:text-sky-400 border border-railblue-200 dark:border-darkslate-700 py-1 px-2 rounded-md text-[11px] font-bold transition">
                             <i class="fa-solid fa-user"></i> Passenger Demo
                         </button>
-                        <button type="button" onclick="fillTestAccount('admin')" class="flex-1 bg-white hover:bg-purple-50 text-purple-700 border border-purple-200 py-1 px-2 rounded-lg text-[11px] font-bold transition">
+                        <button type="button" onclick="fillTestAccount('admin')" class="flex-1 bg-white dark:bg-darkslate-900 hover:bg-purple-50 dark:hover:bg-darkslate-850 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-darkslate-700 py-1 px-2 rounded-md text-[11px] font-bold transition">
                             <i class="fa-solid fa-user-shield"></i> Admin Demo
                         </button>
                     </div>
                 </div>
 
-                <button type="submit" class="w-full bg-railblue-600 hover:bg-railblue-700 text-white font-extrabold text-xs py-3 rounded-xl shadow transition">
+                <button type="submit" class="w-full bg-railblue-600 hover:bg-railblue-700 text-white font-extrabold text-xs py-2.5 rounded-lg shadow transition">
                     Sign In to Account
                 </button>
             </form>
 
             <!-- REGISTER FORM -->
-            <form id="registerForm" class="hidden space-y-3.5">
+            <form id="registerForm" class="hidden space-y-3">
                 <div>
-                    <label class="block text-[11px] font-bold uppercase text-slate-600 mb-1">Full Name</label>
-                    <input type="text" id="registerName" required placeholder="e.g. Narendra M" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
+                    <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">Full Name</label>
+                    <input type="text" id="registerName" required placeholder="e.g. Narendra M" class="w-full bg-slate-50 dark:bg-darkslate-950 border border-slate-300 dark:border-darkslate-800 rounded-lg px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
                 </div>
 
                 <div>
-                    <label class="block text-[11px] font-bold uppercase text-slate-600 mb-1">Email Address</label>
-                    <input type="email" id="registerEmail" required placeholder="user@example.com" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
+                    <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">Email Address</label>
+                    <input type="email" id="registerEmail" required placeholder="user@example.com" class="w-full bg-slate-50 dark:bg-darkslate-950 border border-slate-300 dark:border-darkslate-800 rounded-lg px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
                 </div>
 
                 <div>
-                    <label class="block text-[11px] font-bold uppercase text-slate-600 mb-1">Mobile Number (Strict 10 Digits)</label>
+                    <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">Mobile Number (Strict 10 Digits)</label>
                     <div class="relative">
                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center font-mono text-xs text-slate-400">+91</span>
-                        <input type="tel" id="registerPhone" required maxlength="10" pattern="[6-9][0-9]{9}" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10);" placeholder="9876543210" class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-12 pr-3 py-2 text-xs font-mono font-bold text-slate-800 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
+                        <input type="tel" id="registerPhone" required maxlength="10" pattern="[6-9][0-9]{9}" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 10);" placeholder="9876543210" class="w-full bg-slate-50 dark:bg-darkslate-950 border border-slate-300 dark:border-darkslate-800 rounded-lg pl-12 pr-3 py-2 text-xs font-mono font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-[11px] font-bold uppercase text-slate-600 mb-1">Password (Min. 6 Characters)</label>
-                    <input type="password" id="registerPassword" required minlength="6" placeholder="Create strong password" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
+                    <label class="block text-[11px] font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">Password (Min. 6 Characters)</label>
+                    <input type="password" id="registerPassword" required minlength="6" placeholder="Create strong password" class="w-full bg-slate-50 dark:bg-darkslate-950 border border-slate-300 dark:border-darkslate-800 rounded-lg px-3.5 py-2 text-xs font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-railblue-600 focus:outline-none">
                 </div>
 
-                <button type="submit" class="w-full bg-saffron-500 hover:bg-saffron-600 text-white font-extrabold text-xs py-3 rounded-xl shadow transition">
+                <button type="submit" class="w-full bg-saffron-500 hover:bg-saffron-600 text-white font-extrabold text-xs py-2.5 rounded-lg shadow transition">
                     Register Passenger Account
                 </button>
             </form>
 
-            <p id="message" class="text-center mt-3 text-xs font-semibold"></p>
+            <p id="message" class="text-center mt-2.5 text-xs font-semibold"></p>
         </div>
     </div>
 
 
     <!-- ============================================================== -->
-    <!-- 9. MULTI-COLUMN PROFESSIONAL FOOTER                            -->
+    <!-- 9. MULTI-COLUMN OFFICIAL GOVERNMENT FOOTER                     -->
     <!-- ============================================================== -->
-    <footer class="bg-navy-950 text-slate-400 text-xs mt-auto border-t border-navy-800">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <footer class="bg-navy-950 text-slate-400 text-xs mt-auto border-t border-navy-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
                 
                 <!-- Col 1: About RailConnect -->
                 <div class="space-y-3">
                     <div class="flex items-center gap-2 text-white">
-                        <div class="w-7 h-7 rounded-lg bg-navy-800 text-saffron-400 flex items-center justify-center text-sm">
+                        <div class="w-7 h-7 rounded bg-navy-900 text-saffron-400 flex items-center justify-center text-sm border border-navy-800">
                             <i class="fa-solid fa-train"></i>
                         </div>
-                        <span class="font-extrabold text-lg text-white">Rail<span class="text-saffron-400">Connect</span></span>
+                        <span class="font-extrabold text-base text-white">Rail<span class="text-saffron-400">Connect</span></span>
                     </div>
                     <p class="text-slate-400 leading-relaxed text-[11px]">
-                        Next-generation railway reservation portal built with ACID MySQL transactions, intermediate route timetable scheduling, and role-based passenger/admin access control.
+                        National e-Ticketing Railway Reservation System engineered with ACID relational transactions, intermediate timetable scheduling, role-based access control, and Razorpay payment processing.
                     </p>
-                    <div class="text-[11px] text-slate-500">
-                        DBMS Lab Experiment 3 &bull; Production System
+                    <div class="text-[11px] text-slate-500 font-mono">
+                        Ministry of Railways &bull; CRIS Architectural Model
                     </div>
                 </div>
 
@@ -1026,7 +1095,7 @@
                         <li><a href="#pnrTab" onclick="openTab('pnr')" class="hover:text-white transition">Check 10-Digit PNR Status</a></li>
                         <li><a href="#scheduleSection" class="hover:text-white transition">Train Route Schedules</a></li>
                         <li><a href="/passenger" class="hover:text-white transition">View E-Ticket Slips</a></li>
-                        <li><a href="/passenger" class="hover:text-white transition">Cancel Bookings</a></li>
+                        <li><a href="/passenger" class="hover:text-white transition">Cancel Bookings & Refunds</a></li>
                     </ul>
                 </div>
 
@@ -1044,10 +1113,10 @@
 
                 <!-- Col 4: Operations & Support -->
                 <div>
-                    <h5 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Support & Admin</h5>
+                    <h5 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Support & Security</h5>
                     <ul class="space-y-2 text-[11px]">
                         <li><span class="text-white font-bold">Helpline:</span> 139 (Rail Madad)</li>
-                        <li><span class="text-white font-bold">Security:</span> Bcrypt Hash + Salt 10</li>
+                        <li><span class="text-white font-bold">Security:</span> Bcrypt Salt 10 &bull; 256-Bit SSL</li>
                         <li><a href="/login" class="hover:text-white transition">Passenger Login Portal</a></li>
                         <li><a href="/admin" class="text-saffron-400 hover:text-saffron-300 font-bold transition">Administrator Cockpit</a></li>
                     </ul>
@@ -1056,15 +1125,22 @@
             </div>
 
             <!-- Academic Disclaimer Strip -->
-            <div class="pt-6 border-t border-navy-800/80 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-500 gap-3">
+            <div class="pt-6 border-t border-navy-900 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-500 gap-3">
                 <p>&copy; 2026 RailConnect &bull; Indian Railways Reservation DBMS System. All rights reserved.</p>
-                <p class="bg-navy-900 px-3 py-1 rounded text-slate-400 border border-navy-800">
-                    <i class="fa-solid fa-graduation-cap text-saffron-400 mr-1"></i> Demonstration system for college academic DBMS project. Not affiliated with IRCTC or Indian Railways.
-                </p>
+                <div class="flex items-center gap-3">
+                    <span class="bg-navy-900 px-2.5 py-1 rounded text-slate-400 border border-navy-800">
+                        <i class="fa-solid fa-graduation-cap text-saffron-400 mr-1"></i> Academic DBMS Engineering Project
+                    </span>
+                    <button type="button" onclick="togglePortalTheme()" class="text-slate-400 hover:text-white flex items-center gap-1">
+                        <i class="fa-solid fa-circle-half-stroke"></i> Theme Toggle
+                    </button>
+                </div>
             </div>
         </div>
     </footer>
 
+    <!-- Razorpay Payment Bridge -->
+    <script src="/razorpay_checkout.js"></script>
 
     <!-- ============================================================== -->
     <!-- 10. CLIENT JAVASCRIPT APPLICATION CODE                         -->
@@ -1078,7 +1154,56 @@
         let rawSearchResults = [];
         let allStationsList = [];
 
+        // Theme Management Functions
+        function initPortalTheme() {
+            const savedTheme = localStorage.getItem('railway_portal_theme');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            updateThemeToggleUI(isDark);
+        }
+
+        function togglePortalTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('railway_portal_theme', isDark ? 'dark' : 'light');
+            updateThemeToggleUI(isDark);
+        }
+
+        function updateThemeToggleUI(isDark) {
+            const icons = document.querySelectorAll('.theme-toggle-icon');
+            const texts = document.querySelectorAll('.theme-toggle-text');
+            icons.forEach(icon => {
+                if (isDark) {
+                    icon.className = 'fa-solid fa-sun text-amber-400 theme-toggle-icon';
+                } else {
+                    icon.className = 'fa-solid fa-moon text-slate-300 theme-toggle-icon';
+                }
+            });
+            texts.forEach(text => {
+                text.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+            });
+        }
+
+        // Quick Date Selector (0 = Today, 1 = Tomorrow, 2 = +2 Days)
+        function quickSetDate(daysOffset) {
+            const d = new Date();
+            d.setDate(d.getDate() + daysOffset);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            const dateStr = `${yyyy}-${mm}-${dd}`;
+            const dateInput = document.getElementById("journeyDate");
+            if (dateInput) {
+                dateInput.value = dateStr;
+            }
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
+            initPortalTheme();
             initClock();
             initDefaultDates();
             checkDbHealth();
@@ -1117,45 +1242,49 @@
                     hour: '2-digit', 
                     minute: '2-digit', 
                     second: '2-digit',
-                    hour12: false
+                    hour12: false 
                 };
-                clockEl.innerHTML = `<i class="fa-regular fa-clock text-saffron-400"></i> ${now.toLocaleString('en-IN', options)} IST`;
+                const istFormatter = new Intl.DateTimeFormat('en-IN', options);
+                if (clockEl) {
+                    clockEl.innerHTML = `<i class="fa-regular fa-clock text-saffron-400"></i> ${istFormatter.format(now)} IST`;
+                }
             };
             updateTime();
             setInterval(updateTime, 1000);
         }
 
-        // Initialize default journey date (today + 1)
+        // Initialize Dates (Default tomorrow)
         function initDefaultDates() {
             const today = new Date();
             const tomorrow = new Date(today);
             tomorrow.setDate(tomorrow.getDate() + 1);
-            const dateStr = tomorrow.toISOString().split("T")[0];
+
+            const dateStr = tomorrow.toISOString().split('T')[0];
             const dateInput = document.getElementById("journeyDate");
             if (dateInput) {
                 dateInput.value = dateStr;
-                dateInput.min = today.toISOString().split("T")[0];
+                dateInput.min = today.toISOString().split('T')[0];
             }
         }
 
-        // Check MySQL Database Health
+        // Check Backend DB Health
         async function checkDbHealth() {
             const topDbText = document.getElementById("topDbText");
             try {
-                const res = await fetch(`${API_URL}/db-status`);
+                const res = await fetch(`${API_URL}/health`);
                 const data = await res.json();
-                if (res.ok && data.status === "connected") {
-                    topDbText.textContent = `MySQL: ${data.database}`;
+                if (res.ok && data.database === 'connected') {
+                    topDbText.textContent = "MySQL Active (PRS Sync)";
                 } else {
-                    topDbText.textContent = "MySQL Disconnected";
+                    topDbText.textContent = "Offline Fallback Cache";
                 }
-            } catch {
-                topDbText.textContent = "Server Offline";
+            } catch (err) {
+                topDbText.textContent = "Offline Mode";
             }
         }
 
-        // Check Authenticated Session
-        function checkUserSession() {
+        // Check Passenger User Session
+        async function checkUserSession() {
             const stored = localStorage.getItem("railway_user");
             const profileNav = document.getElementById("userProfileNav");
             const authButtons = document.getElementById("authButtonsNav");
@@ -1166,59 +1295,84 @@
             if (stored) {
                 try {
                     currentUser = JSON.parse(stored);
+                    if (currentUser && currentUser.userId) {
+                        profileNav.classList.remove("hidden");
+                        profileNav.classList.add("flex");
+                        authButtons.classList.add("hidden");
+                        nameEl.textContent = currentUser.name || "Passenger";
+                        roleEl.textContent = (currentUser.role || "Passenger").toUpperCase();
+                        avatarEl.textContent = (currentUser.name || "U").charAt(0).toUpperCase();
+                        return;
+                    }
+                } catch (e) {
+                    console.error("Invalid stored session", e);
+                }
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/user`);
+                const data = await res.json();
+                if (data.loggedIn && data.user) {
+                    currentUser = data.user;
+                    localStorage.setItem("railway_user", JSON.stringify(currentUser));
                     profileNav.classList.remove("hidden");
                     profileNav.classList.add("flex");
                     authButtons.classList.add("hidden");
-
-                    if (nameEl) nameEl.textContent = currentUser.name || "Passenger";
-                    if (roleEl) roleEl.textContent = currentUser.role || "Passenger";
-                    if (avatarEl) avatarEl.textContent = (currentUser.name || "U")[0].toUpperCase();
-                } catch {
-                    localStorage.removeItem("railway_user");
+                    nameEl.textContent = currentUser.name || "Passenger";
+                    roleEl.textContent = (currentUser.role || "Passenger").toUpperCase();
+                    avatarEl.textContent = (currentUser.name || "U").charAt(0).toUpperCase();
+                } else {
                     currentUser = null;
+                    profileNav.classList.add("hidden");
+                    authButtons.classList.remove("hidden");
                 }
-            } else {
-                currentUser = null;
-                profileNav.classList.add("hidden");
-                profileNav.classList.remove("flex");
-                authButtons.classList.remove("hidden");
+            } catch (err) {
+                console.warn("Could not verify session with backend:", err);
             }
         }
 
-        function logoutUser() {
+        // Sign Out
+        async function logoutUser() {
+            try {
+                await fetch(`${API_URL}/logout`, { method: 'POST' });
+            } catch (e) {
+                console.warn("Logout request failed:", e);
+            }
             localStorage.removeItem("railway_user");
-            currentUser = null;
-            checkUserSession();
+            sessionStorage.removeItem("railway_pending_booking");
             window.location.reload();
         }
 
-        // Load all stations from MySQL
+        // Load Stations Data from DB
         async function loadStationsData() {
             try {
                 const res = await fetch(`${API_URL}/stations`);
-                allStationsList = await res.json();
-                if (Array.isArray(allStationsList) && allStationsList.length > 0) {
-                    const fromSel = document.getElementById("fromStation");
-                    const toSel = document.getElementById("toStation");
+                if (res.ok) {
+                    const stations = await res.json();
+                    if (Array.isArray(stations) && stations.length > 0) {
+                        allStationsList = stations;
+                        const fromSel = document.getElementById("fromStation");
+                        const toSel = document.getElementById("toStation");
+                        const currentFrom = fromSel.value;
+                        const currentTo = toSel.value;
 
-                    const currentFrom = fromSel.value || "MAS";
-                    const currentTo = toSel.value || "SBC";
+                        const optsHtml = stations.map(s => 
+                            `<option value="${s.station_code}">${s.station_name} (${s.station_code}) - ${s.city || ''}</option>`
+                        ).join("");
 
-                    const html = allStationsList.map(s => 
-                        `<option value="${s.station_code}">${s.city} - ${s.station_name} (${s.station_code})</option>`
-                    ).join("");
+                        fromSel.innerHTML = optsHtml;
+                        toSel.innerHTML = optsHtml;
 
-                    fromSel.innerHTML = html;
-                    toSel.innerHTML = html;
-
-                    fromSel.value = currentFrom;
-                    toSel.value = currentTo;
+                        if (stations.some(s => s.station_code === currentFrom)) fromSel.value = currentFrom;
+                        if (stations.some(s => s.station_code === currentTo)) toSel.value = currentTo;
+                    }
                 }
-            } catch (err) {
-                console.log("Loaded default stations");
+            } catch (e) {
+                console.warn("Failed to load dynamic station catalog", e);
             }
         }
 
+        // Swap Origin & Destination
         function swapStations() {
             const from = document.getElementById("fromStation");
             const to = document.getElementById("toStation");
@@ -1227,13 +1381,15 @@
             to.value = temp;
         }
 
+        // Set Quick Route
         function setQuickRoute(from, to) {
             document.getElementById("fromStation").value = from;
             document.getElementById("toStation").value = to;
+            scrollToBooking();
             executeSearch(from, to, document.getElementById("journeyDate").value);
-            scrollToResults();
         }
 
+        // Scroll helper
         function scrollToBooking() {
             document.getElementById("bookingSection").scrollIntoView({ behavior: 'smooth' });
         }
@@ -1242,20 +1398,20 @@
             document.getElementById("searchResultsSection").scrollIntoView({ behavior: 'smooth' });
         }
 
-        // Tab Switching in Prominent Booking Card
+        // Tab Navigation inside Booking Card
         function switchBookingTab(tabName) {
             const tabs = ['book', 'pnr', 'schedule', 'availability'];
             tabs.forEach(t => {
                 const btn = document.getElementById(`tab-${t}`);
                 const content = document.getElementById(`content-${t}`);
-                if (btn) btn.className = "pb-3 text-xs uppercase tracking-wider text-slate-500 hover:text-navy-800 font-semibold flex items-center gap-2";
-                if (content) content.classList.add("hidden");
+                if (t === tabName) {
+                    btn.className = "pb-3 text-xs uppercase tracking-wider tab-active flex items-center gap-2";
+                    content.classList.remove("hidden");
+                } else {
+                    btn.className = "pb-3 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-navy-900 dark:hover:text-white font-semibold flex items-center gap-2";
+                    content.classList.add("hidden");
+                }
             });
-
-            const activeBtn = document.getElementById(`tab-${tabName}`);
-            const activeContent = document.getElementById(`content-${tabName}`);
-            if (activeBtn) activeBtn.className = "pb-3 text-xs uppercase tracking-wider tab-active flex items-center gap-2";
-            if (activeContent) activeContent.classList.remove("hidden");
         }
 
         function openTab(tabName) {
@@ -1267,9 +1423,14 @@
             document.getElementById("fromStation").value = "MAS";
             document.getElementById("toStation").value = "SBC";
             initDefaultDates();
+            document.getElementById("filterClass").value = "ALL";
+            document.getElementById("filterQuota").value = "GN";
         }
 
-        // TRAIN SEARCH HANDLER
+        // -------------------------------------------------------------
+        // TRAIN SEARCH LOGIC (ACID Intermediate Route Lookup)
+        // -------------------------------------------------------------
+
         async function handleSearchTrains(e) {
             e.preventDefault();
             const from = document.getElementById("fromStation").value;
@@ -1277,30 +1438,53 @@
             const date = document.getElementById("journeyDate").value;
 
             if (from === to) {
-                alert("Source and Destination station cannot be the same!");
+                alert("Origin and Destination stations cannot be identical. Please select different stations.");
                 return;
             }
 
-            executeSearch(from, to, date);
+            const btn = document.getElementById("searchSubmitBtn");
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>SEARCHING...</span>`;
+
+            await executeSearch(from, to, date);
+
+            btn.innerHTML = originalContent;
             scrollToResults();
         }
 
         async function executeSearch(from, to, date) {
-            const btn = document.getElementById("searchSubmitBtn");
-            if (btn) btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>SEARCHING...</span>`;
+            const container = document.getElementById("trainsListContainer");
+            container.innerHTML = `
+                <div class="bg-white dark:bg-darkslate-900 rounded-lg border border-slate-200 dark:border-darkslate-800 p-8 text-center text-slate-500 dark:text-slate-400">
+                    <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-2 text-railblue-600 dark:text-sky-400"></i>
+                    <p class="text-xs font-semibold">Querying Indian Railways Reservation Database...</p>
+                </div>
+            `;
 
             try {
-                const res = await fetch(`${API_URL}/trains?from=${from}&to=${to}&date=${date}`);
-                rawSearchResults = await res.json();
-                renderTrainResults(rawSearchResults, from, to, date);
+                const res = await fetch(`${API_URL}/trains/search?from=${from}&to=${to}&date=${date}`);
+                const data = await res.json();
+
+                if (Array.isArray(data) && data.length > 0) {
+                    rawSearchResults = data;
+                    renderTrainResults(data, from, to, date);
+                } else {
+                    rawSearchResults = [];
+                    renderTrainResults([], from, to, date);
+                }
             } catch (err) {
                 console.error("Search error:", err);
-            } finally {
-                if (btn) btn.innerHTML = `<i class="fa-solid fa-magnifying-glass"></i> <span>SEARCH TRAINS</span>`;
+                container.innerHTML = `
+                    <div class="bg-white dark:bg-darkslate-900 rounded-lg border border-rose-200 dark:border-rose-900/60 p-6 text-center text-rose-600 dark:text-rose-400 text-xs">
+                        <i class="fa-solid fa-circle-exclamation text-2xl mb-2"></i>
+                        <p class="font-bold">Cannot connect to Railway Reservation Service.</p>
+                        <p class="text-slate-400 mt-1">Please ensure your Node.js backend server is running on port 3000.</p>
+                    </div>
+                `;
             }
         }
 
-        // RENDER TRAIN RESULTS (IRCTC REALISTIC RAILWAY CARDS)
+        // Render Official IRCTC Next-Gen Train Cards
         function renderTrainResults(trains, from, to, date) {
             const container = document.getElementById("trainsListContainer");
             const summaryRoute = document.getElementById("summaryRouteText");
@@ -1313,10 +1497,10 @@
 
             if (trains.length === 0) {
                 container.innerHTML = `
-                    <div class="bg-white rounded-3xl border border-slate-200 p-8 text-center text-slate-500">
-                        <i class="fa-solid fa-train text-4xl mb-3 text-slate-300"></i>
-                        <h4 class="font-extrabold text-navy-800 text-base">No Direct or Intermediate Trains Found</h4>
-                        <p class="text-xs text-slate-400 mt-1">Try selecting major hubs such as MAS ➔ SBC, NDLS ➔ CSTM, or MAS ➔ KPD.</p>
+                    <div class="bg-white dark:bg-darkslate-900 rounded-lg border border-slate-200 dark:border-darkslate-800 p-8 text-center text-slate-500 dark:text-slate-400">
+                        <i class="fa-solid fa-train text-4xl mb-3 text-slate-300 dark:text-slate-700"></i>
+                        <h4 class="font-extrabold text-navy-900 dark:text-white text-base">No Direct or Intermediate Trains Found</h4>
+                        <p class="text-xs text-slate-400 mt-1">Try selecting major junction hubs such as MAS ➔ SBC, NDLS ➔ CSTM, or MAS ➔ KPD.</p>
                     </div>
                 `;
                 return;
@@ -1325,24 +1509,33 @@
             container.innerHTML = trains.map(t => {
                 // Class availability tiles
                 const classesList = (t.classes || [
-                    { class_type: 'AC Chair Car (CC)', base_fare: 950 },
-                    { class_type: 'Executive Chair (EC)', base_fare: 1850 }
+                    { class_type: 'AC Chair Car (CC)', base_fare: 950, total_seats: 78 },
+                    { class_type: 'Executive Chair (EC)', base_fare: 1850, total_seats: 24 }
                 ]);
 
                 const classesHtml = classesList.map((c, idx) => {
-                    // Availability simulation based on total seats
-                    const avail = c.total_seats > 50 ? `AVL-${c.total_seats - 12}` : `RAC-04`;
+                    // Realistic IRCTC availability simulation
+                    const seats = c.total_seats || 60;
+                    let availBadge = '';
+                    if (seats > 40) {
+                        availBadge = `<span class="text-[10px] font-black text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-800 px-1.5 py-0.5 rounded font-mono">AVL-${seats - 12}</span>`;
+                    } else if (seats > 10) {
+                        availBadge = `<span class="text-[10px] font-black text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-800 px-1.5 py-0.5 rounded font-mono">RAC-${seats}</span>`;
+                    } else {
+                        availBadge = `<span class="text-[10px] font-black text-orange-800 dark:text-orange-300 bg-orange-50 dark:bg-orange-950/70 border border-orange-300 dark:border-orange-800 px-1.5 py-0.5 rounded font-mono">WL-${12 - seats}</span>`;
+                    }
                     const isSelected = idx === 0 ? 'selected' : '';
+
                     return `
-                        <div class="class-card ${isSelected} border border-slate-200 hover:border-railblue-500 rounded-2xl p-3 text-left transition bg-white cursor-pointer relative" onclick='selectClassCard(this, ${JSON.stringify(t)}, ${JSON.stringify(c)})'>
+                        <div class="class-card ${isSelected} border border-slate-200 dark:border-darkslate-800 hover:border-railblue-500 dark:hover:border-sky-500 rounded-lg p-2.5 text-left transition bg-white dark:bg-darkslate-950 cursor-pointer relative" onclick='selectClassCard(this, ${JSON.stringify(t)}, ${JSON.stringify(c)})'>
                             <div class="flex items-center justify-between">
-                                <span class="text-xs font-black text-navy-800 font-mono">${c.class_type.split('(')[1]?.replace(')','') || c.class_type.slice(0,2)}</span>
-                                <span class="text-xs font-black text-navy-800">₹${parseFloat(c.base_fare).toFixed(0)}</span>
+                                <span class="text-xs font-black text-navy-900 dark:text-white font-mono">${c.class_type.split('(')[1]?.replace(')','') || c.class_type.slice(0,2)}</span>
+                                <span class="text-xs font-black text-navy-900 dark:text-white font-mono">₹${parseFloat(c.base_fare).toFixed(0)}</span>
                             </div>
-                            <span class="text-[10px] text-slate-400 block truncate">${c.class_type.split('(')[0]}</span>
+                            <span class="text-[10px] text-slate-500 dark:text-slate-400 block truncate mt-0.5">${c.class_type.split('(')[0]}</span>
                             <div class="mt-2 flex items-center justify-between">
-                                <span class="text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded font-mono">${avail}</span>
-                                <span class="text-[10px] text-railblue-600 font-bold hover:underline">Select</span>
+                                ${availBadge}
+                                <span class="text-[10px] text-railblue-600 dark:text-sky-400 font-bold hover:underline">Select</span>
                             </div>
                         </div>
                     `;
@@ -1352,95 +1545,107 @@
                 const routeRows = (t.route || []).map(r => {
                     const isBoarding = r.station_code === (t.source_code || from);
                     const isDest = r.station_code === (t.dest_code || to);
-                    const highlightClass = (isBoarding || isDest) ? 'bg-amber-50 font-bold text-navy-800' : 'text-slate-700';
+                    const highlightClass = (isBoarding || isDest) 
+                        ? 'bg-amber-50 dark:bg-amber-950/30 font-bold text-navy-900 dark:text-amber-200' 
+                        : 'text-slate-700 dark:text-slate-300';
 
                     return `
-                        <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition ${highlightClass}">
-                            <td class="py-2 px-3 font-mono text-blue-600 font-bold text-center">${r.stop_number}</td>
+                        <tr class="border-b border-slate-100 dark:border-darkslate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-darkslate-850 transition ${highlightClass}">
+                            <td class="py-2 px-3 font-mono text-railblue-600 dark:text-sky-400 font-bold text-center">${r.stop_number}</td>
                             <td class="py-2 px-3">
                                 <span class="font-bold">${r.station_name}</span>
                                 <span class="text-[10px] text-slate-400 font-mono ml-1">(${r.station_code})</span>
-                                ${isBoarding ? '<span class="ml-1 text-[9px] bg-blue-100 text-blue-800 px-1 py-0.2 rounded uppercase">Boarding</span>' : ''}
-                                ${isDest ? '<span class="ml-1 text-[9px] bg-emerald-100 text-emerald-800 px-1 py-0.2 rounded uppercase">Destination</span>' : ''}
+                                ${isBoarding ? '<span class="ml-1 text-[9px] bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 px-1 py-0.2 rounded uppercase font-bold">Boarding</span>' : ''}
+                                ${isDest ? '<span class="ml-1 text-[9px] bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 px-1 py-0.2 rounded uppercase font-bold">Destination</span>' : ''}
                             </td>
-                            <td class="py-2 px-3 font-mono font-bold text-emerald-700">${r.arrival_time ? r.arrival_time.slice(0,5) : '--'}</td>
-                            <td class="py-2 px-3 font-mono font-bold text-sky-700">${r.departure_time ? r.departure_time.slice(0,5) : '--'}</td>
-                            <td class="py-2 px-3 font-mono text-slate-500 text-right">${r.distance_from_source} km</td>
+                            <td class="py-2 px-3 font-mono font-bold text-emerald-700 dark:text-emerald-400">${r.arrival_time ? r.arrival_time.slice(0,5) : '--'}</td>
+                            <td class="py-2 px-3 font-mono font-bold text-sky-700 dark:text-sky-400">${r.departure_time ? r.departure_time.slice(0,5) : '--'}</td>
+                            <td class="py-2 px-3 font-mono text-slate-500 dark:text-slate-400 text-right">${r.distance_from_source} km</td>
                         </tr>
                     `;
                 }).join("");
 
                 return `
-                    <div class="bg-white border border-slate-200 hover:border-railblue-400 rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-md transition space-y-4">
+                    <div class="bg-white dark:bg-darkslate-900 border border-slate-200 dark:border-darkslate-800 rounded-lg p-4 sm:p-5 shadow-sm hover:shadow transition space-y-4">
                         
                         <!-- Top Row: Train Name & Running Schedule -->
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 dark:border-darkslate-800 gap-2">
                             <div>
                                 <div class="flex items-center gap-2.5">
-                                    <h4 class="text-base sm:text-lg font-black text-navy-800 tracking-tight">${t.train_name}</h4>
-                                    <span class="bg-navy-800 text-white font-mono text-xs font-black px-2.5 py-0.5 rounded-lg shadow-sm">#${t.train_number}</span>
-                                    ${t.isIntermediate ? `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-amber-300">Intermediate Run</span>` : ''}
+                                    <h4 class="text-base font-black text-navy-900 dark:text-white tracking-tight">${t.train_name}</h4>
+                                    <span class="bg-navy-900 dark:bg-darkslate-800 text-white font-mono text-xs font-black px-2 py-0.5 rounded border border-navy-800 dark:border-darkslate-700">#${t.train_number}</span>
+                                    ${t.isIntermediate ? `<span class="bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-300 dark:border-amber-800">Intermediate Run</span>` : ''}
                                 </div>
-                                <div class="text-[11px] text-slate-500 mt-1 flex items-center gap-2">
-                                    <span>Route: <strong class="text-slate-700">${t.terminal_orig_code || t.source_code} ➔ ${t.terminal_dest_code || t.dest_code}</strong></span>
+                                <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
+                                    <span>Route: <strong class="text-slate-700 dark:text-slate-300">${t.terminal_orig_code || t.source_code} ➔ ${t.terminal_dest_code || t.dest_code}</strong></span>
                                     <span>&bull;</span>
-                                    <span>Runs: <strong class="text-emerald-700">M T W T F S S</strong> (Daily)</span>
+                                    <span>Runs: 
+                                        <strong class="inline-flex gap-1 ml-1">
+                                            <span class="w-4 h-4 rounded text-[9px] flex items-center justify-center font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">M</span>
+                                            <span class="w-4 h-4 rounded text-[9px] flex items-center justify-center font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">T</span>
+                                            <span class="w-4 h-4 rounded text-[9px] flex items-center justify-center font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">W</span>
+                                            <span class="w-4 h-4 rounded text-[9px] flex items-center justify-center font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">T</span>
+                                            <span class="w-4 h-4 rounded text-[9px] flex items-center justify-center font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">F</span>
+                                            <span class="w-4 h-4 rounded text-[9px] flex items-center justify-center font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">S</span>
+                                            <span class="w-4 h-4 rounded text-[9px] flex items-center justify-center font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">S</span>
+                                        </strong>
+                                    </span>
                                 </div>
                             </div>
 
                             <!-- Timetable summary strip -->
                             <div class="flex items-center gap-6 text-sm">
                                 <div class="text-left">
-                                    <div class="text-base font-black text-navy-800 font-mono">${t.departure_time ? t.departure_time.slice(0,5) : '05:50'}</div>
-                                    <div class="text-xs text-slate-500 font-bold">${t.source_city || t.source_code}</div>
+                                    <div class="text-base font-black text-navy-900 dark:text-white font-mono">${t.departure_time ? t.departure_time.slice(0,5) : '05:50'}</div>
+                                    <div class="text-xs text-slate-500 dark:text-slate-400 font-bold">${t.source_city || t.source_code}</div>
                                 </div>
                                 <div class="flex flex-col items-center">
-                                    <span class="text-[10px] font-bold text-railblue-600 font-mono">${t.duration || '4h 30m'}</span>
-                                    <div class="w-20 h-0.5 bg-slate-300 relative my-1">
-                                        <i class="fa-solid fa-arrow-right text-[10px] text-railblue-600 absolute -top-1.5 right-0"></i>
+                                    <span class="text-[10px] font-bold text-railblue-600 dark:text-sky-400 font-mono">${t.duration || '4h 30m'}</span>
+                                    <div class="w-20 h-0.5 bg-slate-300 dark:bg-darkslate-700 relative my-1">
+                                        <i class="fa-solid fa-arrow-right text-[10px] text-railblue-600 dark:text-sky-400 absolute -top-1.5 right-0"></i>
                                     </div>
                                     <span class="text-[9px] text-slate-400 font-mono">${t.segment_distance || '362'} km</span>
                                 </div>
                                 <div class="text-right">
-                                    <div class="text-base font-black text-navy-800 font-mono">${t.arrival_time ? t.arrival_time.slice(0,5) : '10:20'}</div>
-                                    <div class="text-xs text-slate-500 font-bold">${t.dest_city || t.dest_code}</div>
+                                    <div class="text-base font-black text-navy-900 dark:text-white font-mono">${t.arrival_time ? t.arrival_time.slice(0,5) : '10:20'}</div>
+                                    <div class="text-xs text-slate-500 dark:text-slate-400 font-bold">${t.dest_city || t.dest_code}</div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Class Selection Grid -->
                         <div class="space-y-1.5">
-                            <span class="text-[10px] uppercase font-bold text-slate-400 block">Class-wise Berth Availability & Fares:</span>
+                            <span class="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 block">Class-wise Berth Availability & Fares:</span>
                             <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2.5">
                                 ${classesHtml}
                             </div>
                         </div>
 
                         <!-- Action Bar -->
-                        <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
-                            <button onclick="toggleRouteSchedule(${t.train_number})" class="text-xs font-bold text-railblue-700 hover:text-navy-800 bg-railblue-50 hover:bg-railblue-100 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 border border-railblue-200">
+                        <div class="pt-3 border-t border-slate-100 dark:border-darkslate-800 flex flex-wrap items-center justify-between gap-3">
+                            <button onclick="toggleRouteSchedule(${t.train_number})" class="text-xs font-bold text-railblue-700 dark:text-sky-300 hover:text-navy-900 bg-railblue-50 dark:bg-darkslate-850 hover:bg-railblue-100 dark:hover:bg-darkslate-800 px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 border border-railblue-200 dark:border-darkslate-700">
                                 <i class="fa-solid fa-route text-saffron-500"></i>
-                                <span>View Route & Timetable (${(t.route || []).length} Stops)</span>
+                                <span>View Timetable (${(t.route || []).length} Stops)</span>
                             </button>
 
-                            <button onclick='initiateBookingFlow(${JSON.stringify(t)}, ${JSON.stringify(classesList[0])})' class="bg-saffron-500 hover:bg-saffron-600 text-white font-extrabold text-xs px-6 py-2.5 rounded-xl shadow transition flex items-center gap-2">
+                            <button onclick='initiateBookingFlow(${JSON.stringify(t)}, ${JSON.stringify(classesList[0])})' class="bg-saffron-500 hover:bg-saffron-600 text-white font-extrabold text-xs px-6 py-2 rounded-lg shadow transition flex items-center gap-2">
                                 <i class="fa-solid fa-ticket"></i>
                                 <span>BOOK NOW</span>
                             </button>
                         </div>
 
                         <!-- Collapsible Route Schedule Timetable -->
-                        <div id="routeTimeline-${t.train_number}" class="hidden pt-3 border-t border-slate-100 bg-slate-50/70 p-4 rounded-2xl">
-                            <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-200">
-                                <div class="text-xs font-bold text-navy-800 flex items-center gap-1.5">
-                                    <i class="fa-solid fa-timeline text-railblue-600"></i>
-                                    <span>Intermediate Route Timetable & Halts: #${t.train_number} ${t.train_name}</span>
+                        <div id="routeTimeline-${t.train_number}" class="hidden pt-3 border-t border-slate-100 dark:border-darkslate-800 bg-slate-50 dark:bg-darkslate-950 p-3.5 rounded-lg">
+                            <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-200 dark:border-darkslate-800">
+                                <div class="text-xs font-bold text-navy-900 dark:text-white flex items-center gap-1.5">
+                                    <i class="fa-solid fa-timeline text-railblue-600 dark:text-sky-400"></i>
+                                    <span>Intermediate Station Halts: #${t.train_number} ${t.train_name}</span>
                                 </div>
-                                <span class="text-[10px] text-slate-400 font-mono">Real DBMS Relational Data</span>
+                                <span class="text-[10px] text-slate-400 font-mono">DBMS Relational Record</span>
                             </div>
                             <div class="overflow-x-auto">
                                 <table class="w-full text-left text-xs">
-                                    <thead class="bg-slate-200/60 text-slate-600 uppercase font-bold text-[10px]">
+                                    <thead class="bg-slate-200/70 dark:bg-darkslate-850 text-slate-700 dark:text-slate-300 uppercase font-bold text-[10px]">
                                         <tr>
                                             <th class="py-1.5 px-3 text-center">Stop #</th>
                                             <th class="py-1.5 px-3">Station Name</th>
@@ -1462,33 +1667,71 @@
         }
 
         // Select class card in train result
-        function selectClassCard(cardEl, train, classObj) {
-            const parent = cardEl.parentElement;
-            parent.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
-            cardEl.classList.add('selected');
+        function selectClassCard(element, train, classObj) {
+            const cardParent = element.closest('.bg-white, .dark\\:bg-darkslate-900');
+            if (cardParent) {
+                cardParent.querySelectorAll('.class-card').forEach(c => c.classList.remove('selected'));
+            }
+            element.classList.add('selected');
+
+            // Update Book Now button in this train card
+            const actionsBar = element.closest('.space-y-4').querySelector('.pt-3.border-t');
+            if (actionsBar) {
+                const bookBtn = actionsBar.querySelector('button[onclick*="initiateBookingFlow"]');
+                if (bookBtn) {
+                    bookBtn.setAttribute('onclick', `initiateBookingFlow(${JSON.stringify(train)}, ${JSON.stringify(classObj)})`);
+                    const code = classObj.class_type.split('(')[1]?.replace(')','') || classObj.class_type;
+                    bookBtn.innerHTML = `<i class="fa-solid fa-ticket"></i> <span>BOOK ${code} - ₹${parseFloat(classObj.base_fare).toFixed(0)}</span>`;
+                }
+            }
         }
 
-        function toggleRouteSchedule(trainNum) {
-            const el = document.getElementById(`routeTimeline-${trainNum}`);
-            if (el) el.classList.toggle("hidden");
+        // Toggle Route Halts Table
+        function toggleRouteSchedule(trainNumber) {
+            const timeline = document.getElementById(`routeTimeline-${trainNumber}`);
+            if (timeline) {
+                timeline.classList.toggle("hidden");
+            }
         }
 
-        // Apply Filter Checkboxes
+        // Apply Client-Side Filters
         function applyFilters() {
-            const timeCheckboxes = Array.from(document.querySelectorAll('.filter-time:checked')).map(cb => cb.value);
-            const classCheckboxes = Array.from(document.querySelectorAll('.filter-class:checked')).map(cb => cb.value);
-            const typeCheckboxes = Array.from(document.querySelectorAll('.filter-type:checked')).map(cb => cb.value);
+            const selectedTimes = Array.from(document.querySelectorAll('.filter-time:checked')).map(cb => cb.value);
+            const selectedClasses = Array.from(document.querySelectorAll('.filter-class:checked')).map(cb => cb.value);
+            const selectedTypes = Array.from(document.querySelectorAll('.filter-type:checked')).map(cb => cb.value);
 
             let filtered = [...rawSearchResults];
 
-            if (classCheckboxes.length > 0) {
-                filtered = filtered.filter(t => (t.classes || []).some(c => classCheckboxes.some(chk => c.class_type.includes(chk))));
+            if (selectedTimes.length > 0) {
+                filtered = filtered.filter(t => {
+                    const depHour = parseInt(t.departure_time ? t.departure_time.slice(0,2) : "0");
+                    return selectedTimes.some(slot => {
+                        if (slot === 'early') return depHour >= 0 && depHour < 6;
+                        if (slot === 'morning') return depHour >= 6 && depHour < 12;
+                        if (slot === 'afternoon') return depHour >= 12 && depHour < 18;
+                        if (slot === 'night') return depHour >= 18 && depHour < 24;
+                        return true;
+                    });
+                });
             }
 
-            if (typeCheckboxes.length > 0) {
+            if (selectedClasses.length > 0) {
                 filtered = filtered.filter(t => {
-                    const name = (t.train_name || '').toLowerCase();
-                    return typeCheckboxes.some(chk => name.includes(chk));
+                    return (t.classes || []).some(c => 
+                        selectedClasses.some(sc => c.class_type.toUpperCase().includes(sc.toUpperCase()))
+                    );
+                });
+            }
+
+            if (selectedTypes.length > 0) {
+                filtered = filtered.filter(t => {
+                    const name = (t.train_name || "").toLowerCase();
+                    return selectedTypes.some(type => {
+                        if (type === 'vande') return name.includes('vande bharat');
+                        if (type === 'rajdhani') return name.includes('rajdhani');
+                        if (type === 'shatabdi') return name.includes('shatabdi');
+                        return true;
+                    });
                 });
             }
 
@@ -1523,7 +1766,7 @@
                 openAuthModal('login');
                 const msg = document.getElementById("message");
                 if (msg) {
-                    msg.className = "text-center mt-3 text-xs font-bold text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200";
+                    msg.className = "text-center mt-3 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/70 p-2.5 rounded-lg border border-amber-200 dark:border-amber-800";
                     msg.innerHTML = `<i class="fa-solid fa-lock mr-1"></i> <strong>Mandatory Login:</strong> Please log in or register before booking train tickets.`;
                 }
                 return;
@@ -1548,7 +1791,7 @@
             document.getElementById("bookingModal").classList.add("hidden");
         }
 
-        // ACID BOOKING SUBMISSION HANDLER
+        // ACID BOOKING & RAZORPAY PAYMENT SUBMISSION HANDLER
         async function handleConfirmBooking(e) {
             e.preventDefault();
             if (!currentUser || !currentUser.userId) {
@@ -1558,8 +1801,6 @@
             }
 
             const btn = document.getElementById("confirmBookingBtn");
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing ACID Reservation...`;
-
             const passName = document.getElementById("passName").value.trim();
             const passAge = document.getElementById("passAge").value;
             const passGender = document.getElementById("passGender").value;
@@ -1567,54 +1808,76 @@
             const phone = document.getElementById("bookingPhone").value.trim();
             const date = document.getElementById("journeyDate").value;
 
-            const payload = {
-                userId: currentUser.userId,
-                trainNumber: selectedTrainForBooking.train.train_number,
-                journeyDate: date,
-                classType: selectedTrainForBooking.class.class_type,
-                totalFare: selectedTrainForBooking.class.base_fare,
-                passengers: [
-                    { name: passName, age: passAge, gender: passGender, berth: passBerth, phone: phone }
-                ]
-            };
+            const train = selectedTrainForBooking.train;
+            const trainClass = selectedTrainForBooking.class;
 
-            try {
-                const res = await fetch(`${API_URL}/book`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + (currentUser.token || ''),
-                        'x-user-id': currentUser.userId.toString()
-                    },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Initializing Razorpay Gateway...`;
 
-                if (!res.ok) {
-                    alert(data.error || "Booking failed.");
-                    return;
+            // Trigger Razorpay Payment (Supports real test keys or instant interactive simulator)
+            window.initiateRazorpayPayment({
+                amount: trainClass.base_fare,
+                trainNumber: train.train_number,
+                trainName: train.train_name,
+                classType: trainClass.class_type,
+                passengerName: passName,
+                phone: phone,
+                email: currentUser.email || 'passenger@railway.com',
+                onSuccess: async function(paymentResult) {
+                    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Finalizing ACID Reservation...`;
+
+                    const payload = {
+                        userId: currentUser.userId,
+                        trainNumber: train.train_number,
+                        journeyDate: date,
+                        classType: trainClass.class_type,
+                        totalFare: trainClass.base_fare,
+                        paymentId: paymentResult.paymentId,
+                        paymentStatus: 'Paid (Razorpay)',
+                        passengers: [
+                            { name: passName, age: passAge, gender: passGender, berth: passBerth, phone: phone }
+                        ]
+                    };
+
+                    try {
+                        const res = await fetch(`${API_URL}/book`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const data = await res.json();
+
+                        if (res.ok) {
+                            document.getElementById("passengerBookingForm").classList.add("hidden");
+                            const succBox = document.getElementById("bookingSuccessBox");
+                            succBox.classList.remove("hidden");
+
+                            document.getElementById("succPnr").textContent = data.booking?.pnr_number || '8249102847';
+                            document.getElementById("succTrain").textContent = `${train.train_number} - ${train.train_name}`;
+                            document.getElementById("succPassenger").textContent = passName;
+                            document.getElementById("succBerth").textContent = `${data.booking?.coach || 'C4'}-${data.booking?.seat_number || '42'} (${passBerth})`;
+
+                            sessionStorage.removeItem("railway_pending_booking");
+                        } else {
+                            alert(data.error || "Reservation failed. Please check seat availability.");
+                            btn.innerHTML = `<i class="fa-solid fa-lock"></i> <span>PAY & CONFIRM RESERVATION</span>`;
+                        }
+                    } catch (err) {
+                        console.error("Booking error:", err);
+                        alert("Network connection error. Could not reach railway server.");
+                        btn.innerHTML = `<i class="fa-solid fa-lock"></i> <span>PAY & CONFIRM RESERVATION</span>`;
+                    }
+                },
+                onDismiss: function() {
+                    btn.innerHTML = `<i class="fa-solid fa-lock"></i> <span>PAY & CONFIRM RESERVATION</span>`;
                 }
-
-                // Show success confirmation screen
-                document.getElementById("passengerBookingForm").classList.add("hidden");
-                document.getElementById("bookingSuccessBox").classList.remove("hidden");
-
-                document.getElementById("succPnr").textContent = data.pnr;
-                document.getElementById("succTrain").textContent = `${selectedTrainForBooking.train.train_number} - ${selectedTrainForBooking.train.train_name}`;
-                document.getElementById("succPassenger").textContent = `${passName} (${passGender[0]}/${passAge})`;
-                document.getElementById("succBerth").textContent = `CNF (${selectedTrainForBooking.class.class_type.slice(0,2)}-${Math.floor(12 + Math.random() * 40)})`;
-
-                sessionStorage.removeItem("railway_pending_booking");
-
-            } catch (err) {
-                console.error("Booking error:", err);
-                alert("Booking could not be completed.");
-            } finally {
-                btn.innerHTML = `<i class="fa-solid fa-lock"></i> <span>PAY & CONFIRM RESERVATION</span>`;
-            }
+            });
         }
 
-        // PNR SEARCH IN HOMEPAGE
+        // -------------------------------------------------------------
+        // PNR & TIMETABLE ENQUIRY LOGIC
+        // -------------------------------------------------------------
+
         async function handlePnrSearch(e) {
             e.preventDefault();
             const pnr = document.getElementById("pnrInput").value.trim();
@@ -1629,46 +1892,69 @@
                 card.classList.remove("hidden");
 
                 if (!res.ok) {
-                    card.innerHTML = `<div class="text-rose-600 font-bold text-xs"><i class="fa-solid fa-triangle-exclamation mr-1"></i> ${data.error || 'PNR not found.'}</div>`;
+                    card.innerHTML = `<div class="text-rose-600 dark:text-rose-400 font-bold text-xs"><i class="fa-solid fa-triangle-exclamation mr-1"></i> ${data.error || 'PNR not found.'}</div>`;
                     return;
                 }
 
                 card.innerHTML = `
-                    <div class="flex items-center justify-between pb-3 border-b border-slate-200">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-darkslate-800">
                         <div>
-                            <span class="text-[10px] text-railblue-600 font-bold uppercase tracking-wider">PNR Verification</span>
-                            <h4 class="text-lg font-black text-navy-800 font-mono">${data.pnr_number}</h4>
+                            <span class="text-[10px] text-railblue-600 dark:text-sky-400 font-bold uppercase tracking-wider">PRS Verification</span>
+                            <h4 class="text-lg font-black text-navy-900 dark:text-white font-mono">${data.pnr_number}</h4>
                         </div>
                         <div class="text-right">
-                            <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase">
+                            <span class="bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 text-xs font-bold px-3 py-1 rounded uppercase border border-emerald-300 dark:border-emerald-800">
                                 ${data.booking_status || 'Confirmed'}
                             </span>
                             <div class="text-[10px] text-slate-400 font-mono mt-1">${data.chart_status || 'CHART PREPARED'}</div>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 py-3 border-b border-slate-200 text-xs">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 py-3 border-b border-slate-200 dark:border-darkslate-800 text-xs">
                         <div>
-                            <span class="text-slate-400 block text-[10px] uppercase font-bold">Train</span>
-                            <strong class="text-slate-800">${data.train_number} - ${data.train_name}</strong>
+                            <span class="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-bold">Train</span>
+                            <strong class="text-slate-800 dark:text-slate-200">${data.train_number} - ${data.train_name}</strong>
                         </div>
                         <div>
-                            <span class="text-slate-400 block text-[10px] uppercase font-bold">Date of Travel</span>
-                            <strong class="text-slate-800">${data.journey_date}</strong>
+                            <span class="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-bold">Date of Travel</span>
+                            <strong class="text-slate-800 dark:text-slate-200">${data.journey_date}</strong>
                         </div>
                         <div>
-                            <span class="text-slate-400 block text-[10px] uppercase font-bold">Boarding Station</span>
-                            <strong class="text-slate-800">${data.source}</strong>
+                            <span class="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-bold">Origin Station</span>
+                            <strong class="text-slate-800 dark:text-slate-200">${data.source}</strong>
                         </div>
                         <div>
-                            <span class="text-slate-400 block text-[10px] uppercase font-bold">Destination</span>
-                            <strong class="text-slate-800">${data.destination}</strong>
+                            <span class="text-slate-400 dark:text-slate-500 block text-[10px] uppercase font-bold">Destination</span>
+                            <strong class="text-slate-800 dark:text-slate-200">${data.destination}</strong>
                         </div>
+                    </div>
+
+                    <div class="overflow-x-auto pt-2">
+                        <table class="w-full text-left text-xs">
+                            <thead class="text-[10px] uppercase text-slate-400 dark:text-slate-500 font-bold border-b border-slate-200 dark:border-darkslate-800">
+                                <tr>
+                                    <th class="py-1">Passenger</th>
+                                    <th class="py-1">Booking Status</th>
+                                    <th class="py-1">Current Status</th>
+                                    <th class="py-1 text-right">Coach / Seat</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 dark:divide-darkslate-800">
+                                ${(data.passengers || [{ passenger_name: 'Passenger 1', seat_number: 'C4-42', berth_preference: 'Window' }]).map((p, i) => `
+                                    <tr>
+                                        <td class="py-2 font-bold text-slate-800 dark:text-slate-200">${p.passenger_name || 'Passenger ' + (i+1)}</td>
+                                        <td class="py-2 text-emerald-600 dark:text-emerald-400 font-bold">CNF</td>
+                                        <td class="py-2 text-emerald-600 dark:text-emerald-400 font-bold">CNF</td>
+                                        <td class="py-2 text-right font-mono font-bold text-railblue-700 dark:text-sky-400">${p.seat_number || 'C4-42'}</td>
+                                    </tr>
+                                `).join("")}
+                            </tbody>
+                        </table>
                     </div>
                 `;
             } catch (err) {
                 card.classList.remove("hidden");
-                card.innerHTML = `<div class="text-rose-600 font-bold text-xs">Cannot retrieve PNR at this moment.</div>`;
+                card.innerHTML = `<div class="text-rose-600 dark:text-rose-400 font-bold text-xs">Cannot retrieve PNR at this moment.</div>`;
             } finally {
                 btn.innerHTML = `Check Status`;
             }
@@ -1684,43 +1970,54 @@
                 area.classList.remove("hidden");
 
                 const stopsHtml = (data.stops || []).map(s => `
-                    <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition">
-                        <td class="py-2 px-3 font-mono text-center font-bold text-blue-600">${s.stop_number}</td>
-                        <td class="py-2 px-3 font-bold text-slate-800">${s.station_name} (${s.station_code})</td>
-                        <td class="py-2 px-3 text-slate-600">${s.city}</td>
-                        <td class="py-2 px-3 font-mono font-bold text-emerald-700">${s.arrival_time ? s.arrival_time.slice(0,5) : '--'}</td>
-                        <td class="py-2 px-3 font-mono font-bold text-sky-700">${s.departure_time ? s.departure_time.slice(0,5) : '--'}</td>
-                        <td class="py-2 px-3 font-mono text-slate-500 text-right">${s.distance_from_source} km</td>
+                    <tr class="border-b border-slate-100 dark:border-darkslate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-darkslate-850 transition">
+                        <td class="py-2 px-3 font-mono text-center font-bold text-railblue-600 dark:text-sky-400">${s.stop_number}</td>
+                        <td class="py-2 px-3 font-bold text-slate-800 dark:text-slate-200">${s.station_name} (${s.station_code})</td>
+                        <td class="py-2 px-3 text-slate-600 dark:text-slate-400">${s.city || '--'}</td>
+                        <td class="py-2 px-3 font-mono font-bold text-emerald-700 dark:text-emerald-400">${s.arrival_time ? s.arrival_time.slice(0,5) : '--'}</td>
+                        <td class="py-2 px-3 font-mono font-bold text-sky-700 dark:text-sky-400">${s.departure_time ? s.departure_time.slice(0,5) : '--'}</td>
+                        <td class="py-2 px-3 font-mono text-slate-500 dark:text-slate-400 text-right">${s.distance_from_source} km</td>
                     </tr>
                 `).join("");
 
                 area.innerHTML = `
-                    <div class="font-bold text-navy-800 text-sm mb-3">#${data.trainNumber} - ${data.trainName} Complete Timetable</div>
-                    <div class="overflow-x-auto">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-darkslate-800">
+                        <div>
+                            <span class="text-[10px] text-railblue-600 dark:text-sky-400 font-bold uppercase tracking-wider">Official Indian Railways Timetable</span>
+                            <h4 class="text-base font-black text-navy-900 dark:text-white">#${trainNum} - ${data.train_name || 'Express Service'}</h4>
+                        </div>
+                        <span class="text-xs font-mono font-bold bg-navy-900 dark:bg-darkslate-800 text-white px-2.5 py-1 rounded">Daily Service</span>
+                    </div>
+
+                    <div class="overflow-x-auto mt-3">
                         <table class="w-full text-left text-xs">
-                            <thead class="bg-slate-200/60 uppercase text-[10px] font-bold text-slate-600">
+                            <thead class="bg-slate-200/70 dark:bg-darkslate-850 text-slate-700 dark:text-slate-300 font-bold uppercase text-[10px]">
                                 <tr>
-                                    <th class="py-2 px-3 text-center">Stop #</th>
-                                    <th class="py-2 px-3">Station</th>
+                                    <th class="py-2 px-3 text-center">Halt #</th>
+                                    <th class="py-2 px-3">Station Name</th>
                                     <th class="py-2 px-3">City</th>
                                     <th class="py-2 px-3">Arrival</th>
                                     <th class="py-2 px-3">Departure</th>
                                     <th class="py-2 px-3 text-right">Distance</th>
                                 </tr>
                             </thead>
-                            <tbody>${stopsHtml}</tbody>
+                            <tbody>
+                                ${stopsHtml || '<tr><td colspan="6" class="text-center py-4 text-slate-400">No scheduled halts found.</td></tr>'}
+                            </tbody>
                         </table>
                     </div>
                 `;
-            } catch (err) {
-                console.error("Schedule error:", err);
+            } catch (e) {
+                area.classList.remove("hidden");
+                area.innerHTML = `<div class="text-rose-600 dark:text-rose-400 font-bold text-xs">Cannot fetch timetable route schedule.</div>`;
             }
         }
 
-        // =============================================================
-        // AUTH MODAL LOGIC (LOGIN & REGISTRATION)
-        // =============================================================
-        function openAuthModal(mode) {
+        // -------------------------------------------------------------
+        // AUTHENTICATION MODAL LOGIC (LOGIN / REGISTER)
+        // -------------------------------------------------------------
+
+        function openAuthModal(mode = 'login') {
             document.getElementById("authModal").classList.remove("hidden");
             if (mode === 'register') {
                 showRegister();
@@ -1736,86 +2033,36 @@
         function showLogin() {
             document.getElementById("loginForm").classList.remove("hidden");
             document.getElementById("registerForm").classList.add("hidden");
-            document.getElementById("loginTab").className = "w-1/2 py-2.5 text-railblue-600 border-b-2 border-railblue-600 flex items-center justify-center gap-1.5 transition";
-            document.getElementById("registerTab").className = "w-1/2 py-2.5 text-slate-500 hover:text-slate-800 flex items-center justify-center gap-1.5 transition";
+            document.getElementById("loginTab").className = "w-1/2 py-2.5 text-railblue-600 dark:text-sky-400 border-b-2 border-railblue-600 dark:border-sky-400 flex items-center justify-center gap-1.5 transition font-bold";
+            document.getElementById("registerTab").className = "w-1/2 py-2.5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white flex items-center justify-center gap-1.5 transition";
             document.getElementById("message").textContent = "";
         }
 
         function showRegister() {
             document.getElementById("loginForm").classList.add("hidden");
             document.getElementById("registerForm").classList.remove("hidden");
-            document.getElementById("registerTab").className = "w-1/2 py-2.5 text-railblue-600 border-b-2 border-railblue-600 flex items-center justify-center gap-1.5 transition";
-            document.getElementById("loginTab").className = "w-1/2 py-2.5 text-slate-500 hover:text-slate-800 flex items-center justify-center gap-1.5 transition";
+            document.getElementById("registerTab").className = "w-1/2 py-2.5 text-saffron-600 dark:text-saffron-400 border-b-2 border-saffron-600 dark:border-saffron-400 flex items-center justify-center gap-1.5 transition font-bold";
+            document.getElementById("loginTab").className = "w-1/2 py-2.5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white flex items-center justify-center gap-1.5 transition";
             document.getElementById("message").textContent = "";
         }
 
         function fillTestAccount(type) {
             showLogin();
             if (type === 'admin') {
-                document.getElementById("loginEmail").value = "admin@railway.gov.in";
-                document.getElementById("loginPassword").value = "Admin@1234";
+                document.getElementById("loginEmail").value = "admin@railway.com";
+                document.getElementById("loginPassword").value = "admin123";
             } else {
-                document.getElementById("loginEmail").value = "24btcsepy0020@pondiuni.ac.in";
-                document.getElementById("loginPassword").value = "password123";
+                document.getElementById("loginEmail").value = "passenger@railway.com";
+                document.getElementById("loginPassword").value = "pass123";
             }
         }
 
-        // Register Submission with Strict 10-digit Phone Validation
-        document.getElementById("registerForm").addEventListener("submit", async function(e) {
-            e.preventDefault();
-            const msg = document.getElementById("message");
-            msg.className = "text-center mt-3 text-xs font-semibold text-slate-500";
-            msg.textContent = "Validating registration...";
-
-            const name = document.getElementById("registerName").value.trim();
-            const email = document.getElementById("registerEmail").value.trim();
-            const phone = document.getElementById("registerPhone").value.trim();
-            const password = document.getElementById("registerPassword").value;
-
-            // Strict Indian Mobile Validation (Starts with 6,7,8,9 and 10 digits)
-            const mobileRegex = /^[6-9]\d{9}$/;
-            if (!mobileRegex.test(phone)) {
-                msg.className = "text-center mt-3 text-xs font-bold text-rose-600";
-                msg.textContent = "Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9.";
-                document.getElementById("registerPhone").focus();
-                return;
-            }
-
-            if (password.length < 6) {
-                msg.className = "text-center mt-3 text-xs font-bold text-rose-600";
-                msg.textContent = "Password must be at least 6 characters long.";
-                return;
-            }
-
-            try {
-                const res = await fetch(`${API_URL}/register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email, phone, password, role: 'Passenger' })
-                });
-                const data = await res.json();
-
-                if (res.ok) {
-                    msg.className = "text-center mt-3 text-xs font-bold text-emerald-600";
-                    msg.textContent = data.message || "Registration successful! You may now sign in.";
-                    document.getElementById("registerForm").reset();
-                    setTimeout(showLogin, 1200);
-                } else {
-                    msg.className = "text-center mt-3 text-xs font-bold text-rose-600";
-                    msg.textContent = data.error || "Registration failed.";
-                }
-            } catch (err) {
-                msg.className = "text-center mt-3 text-xs font-bold text-rose-600";
-                msg.textContent = "Cannot connect to server.";
-            }
-        });
-
         // Login Submission
-        document.getElementById("loginForm").addEventListener("submit", async function(e) {
+        document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
             e.preventDefault();
             const msg = document.getElementById("message");
-            msg.className = "text-center mt-3 text-xs font-semibold text-slate-500";
-            msg.textContent = "Authenticating...";
+            msg.className = "text-center mt-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400";
+            msg.textContent = "Verifying credentials with database...";
 
             const email = document.getElementById("loginEmail").value.trim();
             const password = document.getElementById("loginPassword").value;
@@ -1826,39 +2073,106 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
                 });
+
                 const data = await res.json();
-
                 if (res.ok) {
-                    msg.className = "text-center mt-3 text-xs font-bold text-emerald-600";
-                    msg.textContent = `Welcome back, ${data.user.name}!`;
+                    msg.className = "text-center mt-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400";
+                    msg.textContent = "Authentication successful! Redirecting...";
 
+                    currentUser = data.user;
                     localStorage.setItem("railway_user", JSON.stringify(data.user));
-                    checkUserSession();
 
                     setTimeout(() => {
-                        closeAuthModal();
-
-                        // Check if user was in the middle of booking a ticket
                         const pendingBooking = sessionStorage.getItem("railway_pending_booking");
                         if (pendingBooking) {
-                            const parsed = JSON.parse(pendingBooking);
-                            initiateBookingFlow(parsed.train, parsed.class);
-                        } else if (data.user.role === 'Admin') {
+                            closeAuthModal();
+                            checkUserSession();
+                            try {
+                                const parsed = JSON.parse(pendingBooking);
+                                initiateBookingFlow(parsed.train, parsed.class);
+                            } catch (e) {
+                                console.error(e);
+                            }
+                        } else if (data.user.role === 'admin') {
                             window.location.href = "/admin";
+                        } else {
+                            window.location.href = "/passenger";
                         }
-                    }, 800);
+                    }, 500);
                 } else {
-                    msg.className = "text-center mt-3 text-xs font-bold text-rose-600";
+                    msg.className = "text-center mt-2.5 text-xs font-bold text-rose-600 dark:text-rose-400";
                     msg.textContent = data.error || "Invalid email or password.";
                 }
             } catch (err) {
-                msg.className = "text-center mt-3 text-xs font-bold text-rose-600";
-                msg.textContent = "Cannot connect to server.";
+                msg.className = "text-center mt-2.5 text-xs font-bold text-rose-600 dark:text-rose-400";
+                msg.textContent = "Cannot connect to railway server.";
             }
         });
 
+        // Register Submission
+        document.getElementById("registerForm")?.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const msg = document.getElementById("message");
+            msg.className = "text-center mt-2.5 text-xs font-semibold text-slate-500 dark:text-slate-400";
+            msg.textContent = "Creating passenger record in MySQL database...";
+
+            const name = document.getElementById("registerName").value.trim();
+            const email = document.getElementById("registerEmail").value.trim();
+            const phone = document.getElementById("registerPhone").value.trim();
+            const password = document.getElementById("registerPassword").value;
+
+            if (phone.length !== 10) {
+                msg.className = "text-center mt-2.5 text-xs font-bold text-rose-600 dark:text-rose-400";
+                msg.textContent = "Mobile number must be exactly 10 digits.";
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, phone, password })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    msg.className = "text-center mt-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400";
+                    msg.textContent = "Account registered successfully! Signing you in...";
+
+                    currentUser = data.user;
+                    localStorage.setItem("railway_user", JSON.stringify(data.user));
+
+                    setTimeout(() => {
+                        const pendingBooking = sessionStorage.getItem("railway_pending_booking");
+                        if (pendingBooking) {
+                            closeAuthModal();
+                            checkUserSession();
+                            try {
+                                const parsed = JSON.parse(pendingBooking);
+                                initiateBookingFlow(parsed.train, parsed.class);
+                            } catch (e) {
+                                console.error(e);
+                            }
+                        } else {
+                            window.location.href = "/passenger";
+                        }
+                    }, 600);
+                } else {
+                    msg.className = "text-center mt-2.5 text-xs font-bold text-rose-600 dark:text-rose-400";
+                    msg.textContent = data.error || "Registration failed. Email or phone may already exist.";
+                }
+            } catch (err) {
+                msg.className = "text-center mt-2.5 text-xs font-bold text-rose-600 dark:text-rose-400";
+                msg.textContent = "Cannot connect to railway server.";
+            }
+        });
+
+        // Mobile Nav Toggle
         function toggleMobileNav() {
-            document.getElementById("mobileNavMenu").classList.toggle("hidden");
+            const menu = document.getElementById("mobileNavMenu");
+            if (menu) {
+                menu.classList.toggle("hidden");
+            }
         }
     </script>
 </body>

@@ -95,9 +95,13 @@ async function setupDatabase() {
                 total_fare DECIMAL(10, 2) NOT NULL,
                 booking_status ENUM('Confirmed', 'Waiting', 'Cancelled') DEFAULT 'Confirmed',
                 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE ON UPDATE CASCADE,
-                FOREIGN KEY (train_number) REFERENCES trains(train_number) ON DELETE RESTRICT ON UPDATE CASCADE
+                FOREIGN KEY (train_number) REFERENCES trains(train_number) ON DELETE RESTRICT ON UPDATE CASCADE,
+                payment_id VARCHAR(100),
+                payment_status VARCHAR(50) DEFAULT 'Paid'
             )
         `);
+        try { await db.query("ALTER TABLE bookings ADD COLUMN payment_id VARCHAR(100)"); } catch (_) {}
+        try { await db.query("ALTER TABLE bookings ADD COLUMN payment_status VARCHAR(50) DEFAULT 'Paid'"); } catch (_) {}
         console.log("✓ Table 'bookings' verified");
 
         // 7. Passengers table
