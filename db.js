@@ -8,7 +8,7 @@ const isLocal = !process.env.DB_HOST ||
 const pool = mysql.createPool({
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT, 10) || (isLocal ? 3306 : 4000),
-    user: process.env.DB_USER || 'root',
+    user: process.env.DB_USER || '4Gve9T66MxC7tSF.root',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'railway_db',
     waitForConnections: true,
