@@ -187,7 +187,7 @@ app.post('/api/register', async (req, res) => {
             await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [
                 `User registered: ${email.trim()} (${assignedRole})`
             ]);
-        } catch (_) {}
+        } catch (_) { }
 
         res.status(201).json({
             message: 'Registration successful! You may now login.',
@@ -247,7 +247,7 @@ app.post('/api/login', async (req, res) => {
             await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [
                 `User logged in: ${user.email} (${user.role})`
             ]);
-        } catch (_) {}
+        } catch (_) { }
 
         res.status(200).json({
             message: 'Login successful!',
@@ -814,7 +814,7 @@ app.post('/api/book', async (req, res) => {
             await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [
                 `Booking confirmed: PNR #${pnrNumber} by ${bookingUser.email} on Train #${trainNumber}`
             ]);
-        } catch (_) {}
+        } catch (_) { }
 
         res.status(201).json({
             message: 'Booking confirmed successfully!',
@@ -907,7 +907,7 @@ app.post('/api/cancel-ticket', async (req, res) => {
             await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [
                 `Booking PNR #${pnrNumber} cancelled`
             ]);
-        } catch (_) {}
+        } catch (_) { }
 
         res.json({
             message: 'Ticket cancelled successfully. Refund initiated to source account.',
@@ -1033,7 +1033,7 @@ app.post('/api/admin/trains', requireAdmin, async (req, res) => {
             await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [
                 `New train created: #${trainNumber} - ${trainName.trim()}`
             ]);
-        } catch (_) {}
+        } catch (_) { }
 
         res.status(201).json({ message: 'Train and routes added successfully!' });
     } catch (err) {
@@ -1062,7 +1062,7 @@ app.put('/api/admin/trains/:trainNumber', requireAdmin, async (req, res) => {
             await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [
                 `Train updated: #${trainNumber} - ${trainName.trim()}`
             ]);
-        } catch (_) {}
+        } catch (_) { }
 
         res.json({ message: 'Train updated successfully!' });
     } catch (err) {
@@ -1082,7 +1082,7 @@ app.delete('/api/admin/trains/:trainNumber', requireAdmin, async (req, res) => {
             await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [
                 `Train deleted: #${trainNumber}`
             ]);
-        } catch (_) {}
+        } catch (_) { }
 
         res.json({ message: 'Train deleted successfully!' });
     } catch (err) {
@@ -1144,7 +1144,7 @@ app.post('/api/admin/trains/:trainNumber/routes', requireAdmin, async (req, res)
             await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [
                 `Stop added to Train #${trainNumber} at station #${stationId} (Stop #${stopNumber})`
             ]);
-        } catch (_) {}
+        } catch (_) { }
 
         res.status(201).json({ message: 'Intermediate stop added successfully!' });
     } catch (err) {
@@ -1169,7 +1169,7 @@ app.put('/api/admin/routes/:routeId', requireAdmin, async (req, res) => {
             await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [
                 `Route stop #${routeId} timing modified`
             ]);
-        } catch (_) {}
+        } catch (_) { }
 
         res.json({ message: 'Route stop timing modified successfully!' });
     } catch (err) {
@@ -1189,7 +1189,7 @@ app.delete('/api/admin/routes/:routeId', requireAdmin, async (req, res) => {
             await db.query('INSERT INTO system_logs (log_message) VALUES (?)', [
                 `Route stop #${routeId} removed`
             ]);
-        } catch (_) {}
+        } catch (_) { }
 
         res.json({ message: 'Route stop removed successfully!' });
     } catch (err) {
