@@ -1,4 +1,5 @@
 const mysql = require('mysql2/promise');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 async function setupDatabase() {
@@ -242,6 +243,39 @@ async function setupDatabase() {
                 );
             }
             console.log("✓ Intermediate routes seeded");
+        }
+
+        // Seed demo accounts for presentation
+        const [demoUserCheck] = await db.query('SELECT user_id FROM users WHERE email = ?', ['passenger@railway.com']);
+        if (demoUserCheck.length === 0) {
+            console.log("Seeding demo presentation accounts...");
+            const hashedPassenger = await bcrypt.hash('password123', 10);
+            const hashedAdmin = await bcrypt.hash('admin123', 10);
+
+            const [pRes] = await db.query(`
+                INSERT INTO users (name, email, password, phone, role)
+                VALUES ('P. Karthikeyan', 'passenger@railway.com', ?, '9876543210', 'Passenger')
+            `, [hashedPassenger]);
+
+            await db.query(`
+                INSERT INTO users (name, email, password, phone, role)
+                VALUES ('Railway System Administrator', 'admin@railway.com', ?, '9876543211', 'Admin')
+            `, [hashedAdmin]);
+
+            // Seed sample demo booking
+            const pId = pRes.insertId;
+            const demoPnr = '8421948210';
+            await db.query(`
+                INSERT INTO bookings (pnr_number, user_id, train_number, journey_date, total_fare, booking_status, payment_id, payment_status)
+                VALUES (?, ?, 20607, '2026-11-20', 950.00, 'Confirmed', 'pay_rzp_MYSQL_DEMO', 'Paid')
+            `, [demoPnr, pId]);
+
+            await db.query(`
+                INSERT INTO passengers (pnr_number, name, age, gender, seat_number, class_type)
+                VALUES (?, 'P. Karthikeyan', 21, 'Male', 'CC-14', 'AC Chair Car (CC)')
+            `, [demoPnr]);
+
+            console.log("✓ Demo presentation accounts and sample booking seeded (passenger@railway.com & admin@railway.com)");
         }
 
         console.log("Railway Reservation DBMS schema initialization complete!");

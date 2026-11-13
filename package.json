@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "setup": "node setup_database.js",
+    "setup:mongo": "node setup_mongodb.js",
+    "setup:all": "node setup_database.js && node setup_mongodb.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -17,6 +19,7 @@
     "cors": "^2.8.6",
     "dotenv": "^18.0.3",
     "express": "^5.2.1",
+    "mongodb": "^6.10.0",
     "mysql2": "^3.24.4"
   }
 }

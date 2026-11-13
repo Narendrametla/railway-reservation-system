@@ -4,6 +4,7 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 const db = require('./db');
+const mongo = require('./db_mongo');
 require('dotenv').config();
 
 const app = express();
@@ -14,6 +15,15 @@ app.use(express.static(__dirname));
 
 // Active sessions in-memory cache
 const activeSessions = new Map();
+
+// Helper to determine target database from headers or query parameters
+function getTargetDatabase(req) {
+    const headerDb = req.headers['x-database'];
+    const queryDb = req.query?.database || req.query?.db;
+    const bodyDb = req.body?.database;
+    const raw = String(headerDb || queryDb || bodyDb || 'mysql').toLowerCase();
+    return raw.includes('mongo') ? 'mongodb' : 'mysql';
+}
 
 // Helper to calculate time difference
 function calculateDuration(depTime, arrTime) {
@@ -43,8 +53,30 @@ async function getAuthUser(req) {
         return activeSessions.get(token);
     }
 
-    const userId = req.headers['x-user-id'] || req.query.userId || req.body?.userId;
+    const userId = req.headers['x-user-id'] || req.query?.userId || req.body?.userId;
+    const targetDb = getTargetDatabase(req);
+
     if (userId) {
+        if (targetDb === 'mongodb' && mongo.getDb()) {
+            try {
+                const u = await mongo.getDb().collection('users').findOne({
+                    $or: [{ user_id: parseInt(userId, 10) }, { user_id: String(userId) }]
+                });
+                if (u) {
+                    return {
+                        userId: u.user_id,
+                        name: u.name,
+                        email: u.email,
+                        phone: u.phone,
+                        role: u.role,
+                        database: 'mongodb'
+                    };
+                }
+            } catch (mErr) {
+                console.error('Error verifying MongoDB user:', mErr.message);
+            }
+        }
+
         try {
             const [rows] = await db.query(
                 'SELECT user_id, name, email, phone, role FROM users WHERE user_id = ?',
@@ -56,7 +88,8 @@ async function getAuthUser(req) {
                     name: rows[0].name,
                     email: rows[0].email,
                     phone: rows[0].phone,
-                    role: rows[0].role
+                    role: rows[0].role,
+                    database: 'mysql'
                 };
             }
         } catch (err) {
@@ -131,6 +164,7 @@ app.get('/admin', (req, res) => {
 // REGISTER
 app.post('/api/register', async (req, res) => {
     const { name, email, password, phone, role } = req.body;
+    const targetDb = getTargetDatabase(req);
 
     if (!name || !email || !password || !phone) {
         return res.status(400).json({
@@ -162,6 +196,51 @@ app.post('/api/register', async (req, res) => {
         });
     }
 
+    // MONGODB ATLAS REGISTRATION
+    if (targetDb === 'mongodb' && mongo.getDb()) {
+        try {
+            const mongoDb = mongo.getDb();
+            const existing = await mongoDb.collection('users').findOne({ email: email.trim().toLowerCase() });
+            if (existing) {
+                return res.status(409).json({
+                    error: 'Email is already registered in MongoDB Atlas. Please login or use a different email.'
+                });
+            }
+
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const assignedRole = role === 'Admin' ? 'Admin' : 'Passenger';
+            const newUserId = Date.now();
+
+            await mongoDb.collection('users').insertOne({
+                user_id: newUserId,
+                name: name.trim(),
+                email: email.trim().toLowerCase(),
+                password: hashedPassword,
+                phone: cleanPhone,
+                role: assignedRole,
+                database_source: 'MongoDB Atlas (NoSQL)',
+                created_at: new Date()
+            });
+
+            try {
+                await mongoDb.collection('system_logs').insertOne({
+                    log_message: `User registered in MongoDB: ${email.trim()} (${assignedRole})`,
+                    logged_at: new Date()
+                });
+            } catch (_) {}
+
+            return res.status(201).json({
+                message: 'Registration successful in MongoDB Atlas! You may now login.',
+                userId: newUserId,
+                database: 'mongodb'
+            });
+        } catch (mErr) {
+            console.error('MongoDB Registration error:', mErr);
+            return res.status(500).json({ error: 'Server error during MongoDB registration.' });
+        }
+    }
+
+    // MYSQL REGISTRATION
     try {
         const [existing] = await db.query(
             'SELECT user_id FROM users WHERE email = ?',
@@ -191,7 +270,8 @@ app.post('/api/register', async (req, res) => {
 
         res.status(201).json({
             message: 'Registration successful! You may now login.',
-            userId: result.insertId
+            userId: result.insertId,
+            database: 'mysql'
         });
 
     } catch (err) {
@@ -205,6 +285,7 @@ app.post('/api/register', async (req, res) => {
 // LOGIN
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
+    const targetDb = getTargetDatabase(req);
 
     if (!email || !password) {
         return res.status(400).json({
@@ -212,6 +293,62 @@ app.post('/api/login', async (req, res) => {
         });
     }
 
+    // MONGODB ATLAS LOGIN
+    if (targetDb === 'mongodb' && mongo.getDb()) {
+        try {
+            const mongoDb = mongo.getDb();
+            const user = await mongoDb.collection('users').findOne({ email: email.trim().toLowerCase() });
+            if (!user) {
+                return res.status(401).json({
+                    error: 'Invalid email or password on MongoDB Atlas.'
+                });
+            }
+
+            const isMatch = await bcrypt.compare(password, user.password);
+            if (!isMatch) {
+                return res.status(401).json({
+                    error: 'Invalid email or password on MongoDB Atlas.'
+                });
+            }
+
+            const token = Buffer.from(`${user.user_id}:mongo:${user.role}:${Date.now()}:${Math.random()}`).toString('base64');
+            activeSessions.set(token, {
+                userId: user.user_id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                role: user.role,
+                database: 'mongodb'
+            });
+
+            try {
+                await mongoDb.collection('system_logs').insertOne({
+                    log_message: `User logged in to MongoDB: ${user.email} (${user.role})`,
+                    logged_at: new Date()
+                });
+            } catch (_) {}
+
+            return res.status(200).json({
+                message: 'Login successful to MongoDB Atlas!',
+                token: token,
+                database: 'mongodb',
+                user: {
+                    userId: user.user_id,
+                    name: user.name,
+                    email: user.email,
+                    phone: user.phone,
+                    role: user.role,
+                    database: 'mongodb',
+                    token: token
+                }
+            });
+        } catch (mErr) {
+            console.error('MongoDB login error:', mErr);
+            return res.status(500).json({ error: 'Server error during MongoDB login.' });
+        }
+    }
+
+    // MYSQL LOGIN
     try {
         const [rows] = await db.query(
             'SELECT * FROM users WHERE email = ?',
@@ -234,13 +371,14 @@ app.post('/api/login', async (req, res) => {
         }
 
         // Generate session token
-        const token = Buffer.from(`${user.user_id}:${user.role}:${Date.now()}:${Math.random()}`).toString('base64');
+        const token = Buffer.from(`${user.user_id}:mysql:${user.role}:${Date.now()}:${Math.random()}`).toString('base64');
         activeSessions.set(token, {
             userId: user.user_id,
             name: user.name,
             email: user.email,
             phone: user.phone,
-            role: user.role
+            role: user.role,
+            database: 'mysql'
         });
 
         try {
@@ -252,12 +390,14 @@ app.post('/api/login', async (req, res) => {
         res.status(200).json({
             message: 'Login successful!',
             token: token,
+            database: 'mysql',
             user: {
                 userId: user.user_id,
                 name: user.name,
                 email: user.email,
                 phone: user.phone,
                 role: user.role,
+                database: 'mysql',
                 token: token
             }
         });
@@ -295,6 +435,19 @@ app.get('/api/auth/me', async (req, res) => {
 
 // GET ALL STATIONS
 app.get('/api/stations', async (req, res) => {
+    const targetDb = getTargetDatabase(req);
+
+    if (targetDb === 'mongodb' && mongo.getDb()) {
+        try {
+            const mStations = await mongo.getDb().collection('stations').find({}).sort({ city: 1 }).toArray();
+            if (mStations.length > 0) {
+                return res.json(mStations);
+            }
+        } catch (mErr) {
+            console.error('Error fetching MongoDB stations:', mErr.message);
+        }
+    }
+
     try {
         const [stations] = await db.query('SELECT * FROM stations ORDER BY city ASC');
         if (stations.length > 0) {
@@ -319,6 +472,67 @@ app.get('/api/stations', async (req, res) => {
 // SEARCH TRAINS (SUPPORTS DIRECT & INTERMEDIATE ROUTES)
 const handleSearchTrains = async (req, res) => {
     const { from, to, date } = req.query;
+    const targetDb = getTargetDatabase(req);
+
+    // MONGODB TRAIN SEARCH
+    if (targetDb === 'mongodb' && mongo.getDb()) {
+        try {
+            const allMongoTrains = await mongo.getDb().collection('trains').find({}).toArray();
+            let matched = [];
+
+            if (from && to) {
+                const fLower = from.toLowerCase().trim();
+                const tLower = to.toLowerCase().trim();
+
+                for (let tr of allMongoTrains) {
+                    if (Array.isArray(tr.route) && tr.route.length >= 2) {
+                        const fromIdx = tr.route.findIndex(r => 
+                            (r.station_code && r.station_code.toLowerCase() === fLower) ||
+                            (r.city && r.city.toLowerCase().includes(fLower)) ||
+                            (r.station_name && r.station_name.toLowerCase().includes(fLower))
+                        );
+                        const toIdx = tr.route.findIndex(r => 
+                            (r.station_code && r.station_code.toLowerCase() === tLower) ||
+                            (r.city && r.city.toLowerCase().includes(tLower)) ||
+                            (r.station_name && r.station_name.toLowerCase().includes(tLower))
+                        );
+
+                        if (fromIdx !== -1 && toIdx !== -1 && fromIdx < toIdx) {
+                            const rFrom = tr.route[fromIdx];
+                            const rTo = tr.route[toIdx];
+                            matched.push({
+                                ...tr,
+                                source_code: rFrom.station_code,
+                                source_name: rFrom.station_name,
+                                source_city: rFrom.city,
+                                dest_code: rTo.station_code,
+                                dest_name: rTo.station_name,
+                                dest_city: rTo.city,
+                                departure_time: rFrom.departure_time,
+                                arrival_time: rTo.arrival_time,
+                                duration: calculateDuration(rFrom.departure_time, rTo.arrival_time),
+                                segment_distance: (rTo.distance_from_source || 0) - (rFrom.distance_from_source || 0),
+                                isIntermediate: (fromIdx > 0 || toIdx < tr.route.length - 1),
+                                database_source: 'MongoDB Atlas (NoSQL)'
+                            });
+                        }
+                    }
+                }
+            } else {
+                matched = allMongoTrains.map(tr => ({
+                    ...tr,
+                    duration: calculateDuration(tr.route?.[0]?.departure_time, tr.route?.[tr.route?.length - 1]?.arrival_time),
+                    database_source: 'MongoDB Atlas (NoSQL)'
+                }));
+            }
+
+            if (matched.length > 0) {
+                return res.json(matched);
+            }
+        } catch (mErr) {
+            console.error('MongoDB Train search error:', mErr.message);
+        }
+    }
 
     try {
         let matchedTrains = [];
@@ -530,6 +744,25 @@ app.get('/api/trains/search', handleSearchTrains);
 // GET INTERMEDIATE ROUTE SCHEDULE FOR A TRAIN
 app.get('/api/trains/:trainNumber/route', async (req, res) => {
     const { trainNumber } = req.params;
+    const targetDb = getTargetDatabase(req);
+
+    // MONGODB ROUTE
+    if (targetDb === 'mongodb' && mongo.getDb()) {
+        try {
+            const tr = await mongo.getDb().collection('trains').findOne({
+                train_number: parseInt(trainNumber, 10)
+            });
+            if (tr) {
+                return res.json({
+                    trainNumber: tr.train_number,
+                    trainName: tr.train_name,
+                    stops: tr.route || []
+                });
+            }
+        } catch (mErr) {
+            console.error('Error fetching MongoDB train route:', mErr.message);
+        }
+    }
 
     try {
         const [train] = await db.query('SELECT train_number, train_name FROM trains WHERE train_number = ?', [trainNumber]);
@@ -571,6 +804,19 @@ app.get('/api/trains/:trainNumber/route', async (req, res) => {
 
 app.get('/api/pnr/:pnr', async (req, res) => {
     const { pnr } = req.params;
+    const targetDb = getTargetDatabase(req);
+
+    // MONGODB PNR LOOKUP
+    if (targetDb === 'mongodb' && mongo.getDb()) {
+        try {
+            const booking = await mongo.getDb().collection('bookings').findOne({ pnr_number: pnr });
+            if (booking) {
+                return res.json(booking);
+            }
+        } catch (mErr) {
+            console.error('MongoDB PNR lookup error:', mErr.message);
+        }
+    }
 
     try {
         const [bookings] = await db.query(`
@@ -745,6 +991,7 @@ app.post('/api/verify-payment', (req, res) => {
 
 app.post('/api/book', async (req, res) => {
     const { userId, trainNumber, journeyDate, classType, passengers, totalFare, paymentId, paymentStatus } = req.body;
+    const targetDb = getTargetDatabase(req);
 
     // 1. Mandatory login check: userId must be provided
     if (!userId) {
@@ -753,6 +1000,78 @@ app.post('/api/book', async (req, res) => {
         });
     }
 
+    // MONGODB BOOKING (NoSQL DOCUMENT MODEL WITH EMBEDDED PASSENGERS)
+    if (targetDb === 'mongodb' && mongo.getDb()) {
+        try {
+            const mongoDb = mongo.getDb();
+            const user = await mongoDb.collection('users').findOne({
+                $or: [{ user_id: parseInt(userId, 10) }, { user_id: String(userId) }, { email: req.user?.email }]
+            }) || { user_id: userId, name: req.user?.name || 'Passenger', email: req.user?.email || 'passenger@railway.com' };
+
+            const train = await mongoDb.collection('trains').findOne({ train_number: parseInt(trainNumber, 10) })
+                || { train_name: 'Express Train', source_name: 'Origin', dest_name: 'Destination', source_code: 'MAS', dest_code: 'SBC' };
+
+            const pnrNumber = '8' + Math.floor(100000000 + Math.random() * 900000000).toString().substring(0, 9);
+            const assignedClass = classType || 'Standard';
+            const classPrefix = assignedClass.substring(0, 2).trim().toUpperCase();
+
+            const assignedPassengers = (passengers || []).map((p, idx) => ({
+                name: p.name || user.name,
+                age: parseInt(p.age, 10) || 25,
+                gender: p.gender || 'M',
+                seat_number: `${classPrefix}-${10 + idx + Math.floor(Math.random() * 30)}`,
+                class_type: assignedClass
+            }));
+
+            const bookingDoc = {
+                pnr_number: pnrNumber,
+                user_id: user.user_id,
+                user_email: user.email,
+                booked_by: user.name,
+                train_number: parseInt(trainNumber, 10),
+                train_name: train.train_name,
+                source: train.source_name || train.source_code,
+                source_code: train.source_code,
+                destination: train.dest_name || train.dest_code,
+                dest_code: train.dest_code,
+                journey_date: journeyDate,
+                booking_date: new Date(),
+                total_fare: parseFloat(totalFare) || 950.00,
+                booking_status: 'Confirmed',
+                chart_status: 'CHART PREPARED',
+                payment_id: paymentId || ('pay_rzp_' + Math.random().toString(36).substring(2, 8).toUpperCase()),
+                payment_status: paymentStatus || 'Paid',
+                database_source: 'MongoDB Atlas (NoSQL)',
+                passengers: assignedPassengers
+            };
+
+            await mongoDb.collection('bookings').insertOne(bookingDoc);
+
+            try {
+                await mongoDb.collection('system_logs').insertOne({
+                    log_message: `Booking confirmed in MongoDB: PNR #${pnrNumber} by ${user.email} on Train #${trainNumber}`,
+                    database_source: 'MongoDB Atlas',
+                    logged_at: new Date()
+                });
+            } catch (_) {}
+
+            return res.status(201).json({
+                message: 'Booking confirmed successfully in MongoDB Atlas!',
+                pnr: pnrNumber,
+                status: 'Confirmed',
+                trainNumber: trainNumber,
+                trainName: train.train_name,
+                totalFare: bookingDoc.total_fare,
+                bookedBy: user.name,
+                database: 'mongodb'
+            });
+        } catch (mErr) {
+            console.error('MongoDB Booking error:', mErr);
+            return res.status(500).json({ error: 'Failed to process MongoDB reservation: ' + mErr.message });
+        }
+    }
+
+    // MYSQL BOOKING (RELATIONAL 3NF MODEL)
     try {
         // Verify user exists in database
         const [userRows] = await db.query(
@@ -823,7 +1142,8 @@ app.post('/api/book', async (req, res) => {
             trainNumber: trainNumber,
             trainName: trainCheck[0].train_name,
             totalFare: totalFare || 950.00,
-            bookedBy: bookingUser.name
+            bookedBy: bookingUser.name,
+            database: 'mysql'
         });
 
     } catch (err) {
@@ -837,11 +1157,31 @@ app.post('/api/book', async (req, res) => {
 // GET USER'S BOOKINGS (PASSENGER PORTAL)
 app.get('/api/user/bookings/:userId', async (req, res) => {
     const { userId } = req.params;
+    const targetDb = getTargetDatabase(req);
 
     if (!userId) {
         return res.status(400).json({ error: 'User ID is required.' });
     }
 
+    // MONGODB USER BOOKINGS
+    if (targetDb === 'mongodb' && mongo.getDb()) {
+        try {
+            const mongoDb = mongo.getDb();
+            const bookings = await mongoDb.collection('bookings').find({
+                $or: [
+                    { user_id: parseInt(userId, 10) },
+                    { user_id: String(userId) },
+                    { user_email: req.user?.email }
+                ]
+            }).sort({ booking_date: -1 }).toArray();
+
+            return res.json(bookings);
+        } catch (mErr) {
+            console.error('MongoDB user bookings error:', mErr.message);
+        }
+    }
+
+    // MYSQL USER BOOKINGS
     try {
         const [bookings] = await db.query(`
             SELECT 
@@ -882,11 +1222,45 @@ app.get('/api/user/bookings/:userId', async (req, res) => {
 // CANCEL TICKET
 app.post('/api/cancel-ticket', async (req, res) => {
     const { pnrNumber, userId } = req.body;
+    const targetDb = getTargetDatabase(req);
 
     if (!pnrNumber) {
         return res.status(400).json({ error: 'PNR number is required.' });
     }
 
+    // MONGODB CANCEL
+    if (targetDb === 'mongodb' && mongo.getDb()) {
+        try {
+            const mongoDb = mongo.getDb();
+            const result = await mongoDb.collection('bookings').updateOne(
+                { pnr_number: pnrNumber },
+                { $set: { booking_status: 'Cancelled', chart_status: 'CANCELLED' } }
+            );
+
+            if (result.matchedCount === 0) {
+                return res.status(404).json({ error: 'Booking not found in MongoDB.' });
+            }
+
+            try {
+                await mongoDb.collection('system_logs').insertOne({
+                    log_message: `Booking PNR #${pnrNumber} cancelled in MongoDB Atlas`,
+                    database_source: 'MongoDB Atlas',
+                    logged_at: new Date()
+                });
+            } catch (_) {}
+
+            return res.json({
+                message: 'Ticket cancelled successfully in MongoDB Atlas. Refund initiated.',
+                pnr: pnrNumber,
+                database: 'mongodb'
+            });
+        } catch (mErr) {
+            console.error('MongoDB cancellation error:', mErr.message);
+            return res.status(500).json({ error: 'Failed to cancel MongoDB ticket.' });
+        }
+    }
+
+    // MYSQL CANCEL
     try {
         const [check] = await db.query('SELECT user_id, booking_status FROM bookings WHERE pnr_number = ?', [pnrNumber]);
         if (check.length === 0) {
@@ -911,7 +1285,8 @@ app.post('/api/cancel-ticket', async (req, res) => {
 
         res.json({
             message: 'Ticket cancelled successfully. Refund initiated to source account.',
-            pnr: pnrNumber
+            pnr: pnrNumber,
+            database: 'mysql'
         });
     } catch (err) {
         console.error('Cancellation error:', err.message);
@@ -925,6 +1300,36 @@ app.post('/api/cancel-ticket', async (req, res) => {
 
 // ADMIN STATS
 app.get('/api/admin/stats', requireAdmin, async (req, res) => {
+    const targetDb = getTargetDatabase(req);
+
+    // MONGODB ADMIN STATS
+    if (targetDb === 'mongodb' && mongo.getDb()) {
+        try {
+            const mongoDb = mongo.getDb();
+            const totalUsers = await mongoDb.collection('users').countDocuments();
+            const totalTrains = await mongoDb.collection('trains').countDocuments();
+            const totalStations = await mongoDb.collection('stations').countDocuments();
+            const totalBookings = await mongoDb.collection('bookings').countDocuments();
+
+            const revAgg = await mongoDb.collection('bookings').aggregate([
+                { $match: { booking_status: 'Confirmed' } },
+                { $group: { _id: null, total: { $sum: '$total_fare' } } }
+            ]).toArray();
+
+            return res.json({
+                totalUsers,
+                totalTrains,
+                totalStations,
+                totalBookings,
+                totalRevenue: parseFloat(revAgg[0]?.total || 0),
+                database: 'mongodb'
+            });
+        } catch (mErr) {
+            console.error('MongoDB Admin stats error:', mErr.message);
+        }
+    }
+
+    // MYSQL ADMIN STATS
     try {
         const [users] = await db.query('SELECT COUNT(*) AS total FROM users');
         const [trains] = await db.query('SELECT COUNT(*) AS total FROM trains');
@@ -937,7 +1342,8 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
             totalTrains: trains[0].total,
             totalStations: stations[0].total,
             totalBookings: bookings[0].total,
-            totalRevenue: parseFloat(revenue[0].total) || 0
+            totalRevenue: parseFloat(revenue[0].total) || 0,
+            database: 'mysql'
         });
     } catch (err) {
         console.error('Admin stats error:', err.message);
@@ -947,6 +1353,17 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
 
 // ADMIN: GET ALL BOOKINGS
 app.get('/api/admin/all-bookings', requireAdmin, async (req, res) => {
+    const targetDb = getTargetDatabase(req);
+
+    if (targetDb === 'mongodb' && mongo.getDb()) {
+        try {
+            const bookings = await mongo.getDb().collection('bookings').find({}).sort({ booking_date: -1 }).limit(100).toArray();
+            return res.json(bookings);
+        } catch (mErr) {
+            console.error('MongoDB all bookings error:', mErr.message);
+        }
+    }
+
     try {
         const [bookings] = await db.query(`
             SELECT 
@@ -974,6 +1391,17 @@ app.get('/api/admin/all-bookings', requireAdmin, async (req, res) => {
 
 // ADMIN: GET ALL USERS
 app.get('/api/admin/users', requireAdmin, async (req, res) => {
+    const targetDb = getTargetDatabase(req);
+
+    if (targetDb === 'mongodb' && mongo.getDb()) {
+        try {
+            const users = await mongo.getDb().collection('users').find({}, { projection: { password: 0 } }).sort({ created_at: -1 }).toArray();
+            return res.json(users);
+        } catch (mErr) {
+            console.error('MongoDB admin users error:', mErr.message);
+        }
+    }
+
     try {
         const [users] = await db.query('SELECT user_id, name, email, phone, role, created_at FROM users ORDER BY created_at DESC');
         res.json(users);
@@ -985,6 +1413,17 @@ app.get('/api/admin/users', requireAdmin, async (req, res) => {
 
 // ADMIN: GET SYSTEM AUDIT LOGS
 app.get('/api/admin/logs', requireAdmin, async (req, res) => {
+    const targetDb = getTargetDatabase(req);
+
+    if (targetDb === 'mongodb' && mongo.getDb()) {
+        try {
+            const logs = await mongo.getDb().collection('system_logs').find({}).sort({ logged_at: -1 }).limit(50).toArray();
+            return res.json(logs);
+        } catch (mErr) {
+            console.error('MongoDB admin logs error:', mErr.message);
+        }
+    }
+
     try {
         const [logs] = await db.query('SELECT * FROM system_logs ORDER BY logged_at DESC LIMIT 50');
         return res.json(logs);
@@ -1203,20 +1642,36 @@ app.delete('/api/admin/routes/:routeId', requireAdmin, async (req, res) => {
 // -----------------------------------------------------------------------------
 
 const handleDbStatus = async (req, res) => {
+    const targetDb = getTargetDatabase(req);
+    let mysqlConnected = false;
+    let mongoConnected = mongo.isConnected();
+    let mysqlDbName = 'railway_db';
+    let mongoDbName = mongo.dbName;
+
     try {
         const [rows] = await db.query('SELECT DATABASE() as db_name, 1 as status');
-        res.status(200).json({
-            message: 'Connected to database successfully!',
-            database: rows[0]?.db_name || 'railway_db',
-            status: 'connected'
-        });
-    } catch (err) {
-        res.status(200).json({
-            message: 'Operating with in-memory fallback catalog',
-            database: 'railway_db (memory)',
-            status: 'connected'
-        });
-    }
+        mysqlConnected = true;
+        mysqlDbName = rows[0]?.db_name || 'railway_db';
+    } catch (_) {}
+
+    const isCurrentActiveConnected = targetDb === 'mongodb' ? mongoConnected : mysqlConnected;
+
+    res.status(200).json({
+        activeDatabase: targetDb,
+        status: isCurrentActiveConnected ? 'connected' : 'fallback',
+        database: targetDb === 'mongodb' ? mongoDbName : mysqlDbName,
+        message: isCurrentActiveConnected ? `Connected to ${targetDb.toUpperCase()} successfully!` : `Operating with standby catalog for ${targetDb.toUpperCase()}`,
+        mysql: {
+            status: mysqlConnected ? 'connected' : 'standby',
+            database: mysqlDbName,
+            type: 'Relational (3NF)'
+        },
+        mongodb: {
+            status: mongoConnected ? 'connected' : 'standby',
+            database: mongoDbName,
+            type: 'NoSQL Document Store (Atlas)'
+        }
+    });
 };
 app.get('/api/db-status', handleDbStatus);
 app.get('/api/health', handleDbStatus);

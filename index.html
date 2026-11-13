@@ -165,10 +165,21 @@
 
                 <span class="text-slate-600">|</span>
 
+                <!-- Dual Database Switcher Pill -->
+                <div class="flex items-center gap-1 bg-slate-900 border border-slate-750 px-1 py-0.5 rounded-md">
+                    <span class="text-[9px] uppercase font-bold text-slate-400 pl-1 hidden md:inline">DB:</span>
+                    <button type="button" id="topNavBtnMysql" onclick="switchGlobalDatabase('mysql')" class="px-2 py-0.5 text-[10px] font-bold rounded transition bg-blue-600 text-white flex items-center gap-1 shadow-sm" title="Active: MySQL Relational Database">
+                        <span>🐬 MySQL</span>
+                    </button>
+                    <button type="button" id="topNavBtnMongo" onclick="switchGlobalDatabase('mongodb')" class="px-2 py-0.5 text-[10px] font-bold rounded transition text-slate-400 hover:text-white flex items-center gap-1" title="Switch to MongoDB Atlas NoSQL Database">
+                        <span>🍃 MongoDB</span>
+                    </button>
+                </div>
+
                 <!-- PRS Database Status Badge -->
                 <div id="topDbStatus" class="flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-950/70 px-2 py-0.5 rounded border border-emerald-800/50">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span id="topDbText">MySQL Connected</span>
+                    <span id="topDbText">MySQL Active</span>
                 </div>
 
                 <span class="text-slate-600">|</span>
@@ -1148,6 +1159,55 @@
     <script>
         const API_URL = "/api";
 
+        // -------------------------------------------------------------
+        // DUAL DATABASE CONTEXT (MySQL vs MongoDB Atlas)
+        // -------------------------------------------------------------
+        let activeDatabase = localStorage.getItem('railway_active_db') || 'mysql';
+
+        // Intercept all fetch requests to transparently include x-database header
+        const _nativeFetch = window.fetch;
+        window.fetch = function(url, options = {}) {
+            options = options || {};
+            options.headers = options.headers || {};
+            if (typeof options.headers.set === 'function') {
+                options.headers.set('x-database', activeDatabase);
+            } else if (Array.isArray(options.headers)) {
+                options.headers.push(['x-database', activeDatabase]);
+            } else {
+                options.headers['x-database'] = activeDatabase;
+            }
+            return _nativeFetch(url, options);
+        };
+
+        function switchGlobalDatabase(dbType) {
+            activeDatabase = dbType;
+            localStorage.setItem('railway_active_db', dbType);
+            updateTopNavDatabaseUI();
+            checkDbHealth();
+            loadStationsData();
+            const from = document.getElementById("fromStation")?.value || 'MAS';
+            const to = document.getElementById("toStation")?.value || 'SBC';
+            const date = document.getElementById("journeyDate")?.value || '';
+            executeSearch(from, to, date);
+        }
+
+        function updateTopNavDatabaseUI() {
+            const isMongo = activeDatabase === 'mongodb';
+            const btnMysql = document.getElementById("topNavBtnMysql");
+            const btnMongo = document.getElementById("topNavBtnMongo");
+            const topDbText = document.getElementById("topDbText");
+
+            if (isMongo) {
+                if (btnMongo) btnMongo.className = "px-2 py-0.5 text-[10px] font-bold rounded transition bg-emerald-600 text-white flex items-center gap-1 shadow-sm";
+                if (btnMysql) btnMysql.className = "px-2 py-0.5 text-[10px] font-bold rounded transition text-slate-400 hover:text-white flex items-center gap-1";
+                if (topDbText) topDbText.textContent = "🍃 MongoDB Active";
+            } else {
+                if (btnMysql) btnMysql.className = "px-2 py-0.5 text-[10px] font-bold rounded transition bg-blue-600 text-white flex items-center gap-1 shadow-sm";
+                if (btnMongo) btnMongo.className = "px-2 py-0.5 text-[10px] font-bold rounded transition text-slate-400 hover:text-white flex items-center gap-1";
+                if (topDbText) topDbText.textContent = "🐬 MySQL Active";
+            }
+        }
+
         // Global Application State
         let currentUser = null;
         let selectedTrainForBooking = null;
@@ -1206,6 +1266,7 @@
             initPortalTheme();
             initClock();
             initDefaultDates();
+            updateTopNavDatabaseUI();
             checkDbHealth();
             checkUserSession();
             loadStationsData();
@@ -1273,13 +1334,19 @@
             try {
                 const res = await fetch(`${API_URL}/health`);
                 const data = await res.json();
-                if (res.ok && data.database === 'connected') {
-                    topDbText.textContent = "MySQL Active (PRS Sync)";
+                if (res.ok) {
+                    const isMongo = activeDatabase === 'mongodb';
+                    const activeEngine = isMongo ? data.mongodb : data.mysql;
+                    if (topDbText) {
+                        topDbText.textContent = isMongo 
+                            ? `🍃 MongoDB: ${activeEngine?.status || 'Active'}`
+                            : `🐬 MySQL: ${activeEngine?.status || 'Active'}`;
+                    }
                 } else {
-                    topDbText.textContent = "Offline Fallback Cache";
+                    if (topDbText) topDbText.textContent = "Standby Mode";
                 }
             } catch (err) {
-                topDbText.textContent = "Offline Mode";
+                if (topDbText) topDbText.textContent = "Offline Mode";
             }
         }
 

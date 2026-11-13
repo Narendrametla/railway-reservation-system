@@ -231,21 +231,51 @@
                     </div>
                 </div>
 
+                <!-- DUAL DATABASE SELECTOR (MySQL vs MongoDB Atlas) -->
+                <div class="bg-gradient-to-r from-slate-900 via-navy-900 to-slate-950 p-4 rounded-xl border border-slate-700 shadow-md text-white space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-extrabold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-server text-sky-400"></i> Active Database Engine:
+                        </span>
+                        <span id="activeDbIndicator" class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded shadow-sm bg-blue-600 text-white">
+                            MySQL Relational
+                        </span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" id="btnDbMysql" onclick="selectDatabase('mysql')" class="p-2.5 rounded-lg border-2 border-sky-400 bg-sky-950/70 text-white font-extrabold text-xs flex flex-col items-center justify-center gap-1 transition shadow-sm">
+                            <span class="flex items-center gap-1.5 text-sky-300">
+                                <i class="fa-solid fa-database"></i> 🐬 MySQL
+                            </span>
+                            <span class="text-[10px] font-normal text-slate-300">Relational 3NF</span>
+                        </button>
+                        <button type="button" id="btnDbMongo" onclick="selectDatabase('mongodb')" class="p-2.5 rounded-lg border-2 border-transparent bg-slate-800/80 hover:bg-slate-750 text-slate-300 hover:text-white font-extrabold text-xs flex flex-col items-center justify-center gap-1 transition">
+                            <span class="flex items-center gap-1.5 text-emerald-400">
+                                <i class="fa-solid fa-leaf"></i> 🍃 MongoDB Atlas
+                            </span>
+                            <span class="text-[10px] font-normal text-slate-300">NoSQL Document Store</span>
+                        </button>
+                    </div>
+                    <div id="dbBannerNotice" class="text-[11px] bg-sky-900/40 border border-sky-700/60 rounded px-2.5 py-1.5 text-sky-200 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-info text-sky-400"></i>
+                        <span id="dbBannerText">Authenticating against <strong>MySQL Database</strong> (8 Normalized Relational Tables).</span>
+                    </div>
+                </div>
+
                 <!-- Quick Demo Credentials Box -->
                 <div class="bg-white dark:bg-darkslate-900 p-4 rounded-xl border border-slate-200 dark:border-darkslate-800 shadow-sm text-xs space-y-2">
                     <div class="flex items-center justify-between">
                         <span class="font-bold text-[#1E3A8A] dark:text-sky-300 flex items-center gap-1.5">
                             <i class="fa-solid fa-key text-saffron-500"></i>
-                            <span>1-Click Test Credentials:</span>
+                            <span>1-Click Shared Demo Credentials:</span>
                         </span>
-                        <span class="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Demo Auto-Fill</span>
+                        <span class="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Works on Both DBs</span>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <button type="button" onclick="fillCredentials('passenger')" class="px-3 py-2 bg-blue-50 dark:bg-railblue-950/50 hover:bg-blue-100 dark:hover:bg-railblue-900/60 text-railblue-700 dark:text-sky-300 font-bold rounded-lg border border-blue-200 dark:border-blue-900/60 text-center transition flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-user text-xs"></i> Passenger Demo
+                            <i class="fa-solid fa-user text-xs"></i> Passenger (password123)
                         </button>
                         <button type="button" onclick="fillCredentials('admin')" class="px-3 py-2 bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 font-bold rounded-lg border border-amber-200 dark:border-amber-900/60 text-center transition flex items-center justify-center gap-1.5">
-                            <i class="fa-solid fa-user-shield text-xs"></i> Admin Demo
+                            <i class="fa-solid fa-user-shield text-xs"></i> Admin (admin123)
                         </button>
                     </div>
                 </div>
@@ -553,6 +583,7 @@
                 if (noticeEl) noticeEl.classList.remove("hidden");
             }
 
+            updateDatabaseUI();
             checkDatabaseStatus();
         });
 
@@ -611,37 +642,92 @@
             }
         }
 
-        // 1-Click Credentials Fill
+        // ---------------------------------------------------------------------
+        // DUAL DATABASE SWITCHING LOGIC (MySQL vs MongoDB Atlas)
+        // ---------------------------------------------------------------------
+        let currentDatabase = localStorage.getItem('railway_active_db') || 'mysql';
+
+        function selectDatabase(type) {
+            currentDatabase = type;
+            localStorage.setItem('railway_active_db', type);
+            updateDatabaseUI();
+            showStatusMessage(`Switched active authentication database to: ${type === 'mongodb' ? 'MongoDB Atlas (NoSQL)' : 'MySQL (Relational)'}`, 'info');
+        }
+
+        function updateDatabaseUI() {
+            const isMongo = currentDatabase === 'mongodb';
+            const btnMysql = document.getElementById("btnDbMysql");
+            const btnMongo = document.getElementById("btnDbMongo");
+            const indicator = document.getElementById("activeDbIndicator");
+            const notice = document.getElementById("dbBannerNotice");
+            const text = document.getElementById("dbBannerText");
+
+            if (isMongo) {
+                if (btnMongo) btnMongo.className = "p-2.5 rounded-lg border-2 border-emerald-400 bg-emerald-950/70 text-white font-extrabold text-xs flex flex-col items-center justify-center gap-1 transition shadow-sm";
+                if (btnMysql) btnMysql.className = "p-2.5 rounded-lg border-2 border-transparent bg-slate-800/80 hover:bg-slate-750 text-slate-300 hover:text-white font-extrabold text-xs flex flex-col items-center justify-center gap-1 transition";
+                if (indicator) {
+                    indicator.textContent = "MongoDB Atlas NoSQL";
+                    indicator.className = "text-[10px] font-black uppercase px-2.5 py-0.5 rounded shadow-sm bg-emerald-600 text-white";
+                }
+                if (notice) notice.className = "text-[11px] bg-emerald-950/60 border border-emerald-700/60 rounded px-2.5 py-1.5 text-emerald-200 flex items-center gap-2";
+                if (text) text.innerHTML = "Authenticating against <strong>MongoDB Atlas</strong> (NoSQL Document Schema).";
+            } else {
+                if (btnMysql) btnMysql.className = "p-2.5 rounded-lg border-2 border-sky-400 bg-sky-950/70 text-white font-extrabold text-xs flex flex-col items-center justify-center gap-1 transition shadow-sm";
+                if (btnMongo) btnMongo.className = "p-2.5 rounded-lg border-2 border-transparent bg-slate-800/80 hover:bg-slate-750 text-slate-300 hover:text-white font-extrabold text-xs flex flex-col items-center justify-center gap-1 transition";
+                if (indicator) {
+                    indicator.textContent = "MySQL Relational";
+                    indicator.className = "text-[10px] font-black uppercase px-2.5 py-0.5 rounded shadow-sm bg-blue-600 text-white";
+                }
+                if (notice) notice.className = "text-[11px] bg-sky-900/40 border border-sky-700/60 rounded px-2.5 py-1.5 text-sky-200 flex items-center gap-2";
+                if (text) text.innerHTML = "Authenticating against <strong>MySQL Database</strong> (8 Normalized Relational Tables).";
+            }
+            checkDatabaseStatus();
+        }
+
+        // 1-Click Credentials Fill (Shared for Both Databases)
         function fillCredentials(type) {
             showLogin();
             if (type === 'admin') {
-                document.getElementById("loginEmail").value = "admin@railway.gov.in";
-                document.getElementById("loginPassword").value = "Admin@1234";
-                showStatusMessage("Admin demo credentials filled: admin@railway.gov.in", "info");
+                document.getElementById("loginEmail").value = "admin@railway.com";
+                document.getElementById("loginPassword").value = "admin123";
+                showStatusMessage(`Admin demo credentials filled for ${currentDatabase.toUpperCase()}: admin@railway.com`, "info");
             } else {
-                document.getElementById("loginEmail").value = "24btcsepy0020@pondiuni.ac.in";
+                document.getElementById("loginEmail").value = "passenger@railway.com";
                 document.getElementById("loginPassword").value = "password123";
-                showStatusMessage("Passenger demo credentials filled: 24btcsepy0020@pondiuni.ac.in", "info");
+                showStatusMessage(`Passenger demo credentials filled for ${currentDatabase.toUpperCase()}: passenger@railway.com`, "info");
             }
         }
 
-        // Check MySQL Database Status
+        // Check Database Status (Reports Both MySQL and MongoDB)
         async function checkDatabaseStatus() {
             const badge = document.getElementById("dbStatusBadge");
             const text = document.getElementById("dbStatusText");
             try {
-                const res = await fetch(`${API_URL}/db-status`);
+                const res = await fetch(`${API_URL}/db-status`, {
+                    headers: { 'x-database': currentDatabase }
+                });
                 const data = await res.json();
-                if (res.ok && data.status === 'connected') {
-                    badge.className = "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800";
-                    text.textContent = `MySQL Connected (${data.database})`;
-                } else {
-                    badge.className = "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800";
-                    text.textContent = "MySQL Disconnected";
+                if (res.ok) {
+                    const isMongo = currentDatabase === 'mongodb';
+                    const activeEngine = isMongo ? data.mongodb : data.mysql;
+                    const isConn = activeEngine?.status === 'connected';
+
+                    if (badge) {
+                        badge.className = isConn 
+                            ? (isMongo 
+                                ? "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                                : "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800")
+                            : "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800";
+                    }
+                    if (text) {
+                        text.textContent = isMongo 
+                            ? `🍃 MongoDB: ${activeEngine.database} (${activeEngine.status})`
+                            : `🐬 MySQL: ${activeEngine.database} (${activeEngine.status})`;
+                    }
                 }
             } catch {
-                badge.className = "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800";
-                text.textContent = "Server Standby";
+                if (badge) badge.className = "flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800";
+                if (text) text.textContent = "Server Standby";
             }
         }
 
@@ -699,19 +785,23 @@
 
             btn.disabled = true;
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...`;
-            showStatusMessage("Verifying credentials against railway database...", "info");
+            showStatusMessage(`Verifying credentials on ${currentDatabase === 'mongodb' ? 'MongoDB Atlas' : 'MySQL'}...`, "info");
 
             try {
                 const response = await fetch(`${API_URL}/login`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "x-database": currentDatabase
+                    },
                     body: JSON.stringify({ email, password })
                 });
 
                 const data = await response.json();
                 if (response.ok) {
-                    showStatusMessage(`Welcome back, ${data.user.name}! Redirecting to portal...`, "success");
+                    showStatusMessage(`Welcome back, ${data.user.name}! (${data.user.database?.toUpperCase() || currentDatabase.toUpperCase()}) Redirecting...`, "success");
                     localStorage.setItem("railway_user", JSON.stringify(data.user));
+                    localStorage.setItem("railway_active_db", currentDatabase);
 
                     setTimeout(() => {
                         const pendingBooking = sessionStorage.getItem('pendingBooking');
@@ -763,12 +853,15 @@
 
             btn.disabled = true;
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Registering...`;
-            showStatusMessage("Registering account in railway database...", "info");
+            showStatusMessage(`Registering account in ${currentDatabase === 'mongodb' ? 'MongoDB Atlas' : 'MySQL'}...`, "info");
 
             try {
                 const response = await fetch(`${API_URL}/register`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "x-database": currentDatabase
+                    },
                     body: JSON.stringify({ name, email, phone, password, role })
                 });
 

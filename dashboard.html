@@ -285,10 +285,20 @@
                         <span id="rolePillText">Passenger Portal</span>
                     </div>
 
+                    <!-- Dual Database Switcher Pill -->
+                    <div class="flex items-center gap-1 bg-slate-100 dark:bg-darkslate-800 border border-slate-300 dark:border-darkslate-700 px-1 py-1 rounded-lg">
+                        <button type="button" id="dashBtnMysql" onclick="switchDashboardDatabase('mysql')" class="px-2.5 py-1 text-xs font-bold rounded-md transition bg-blue-600 text-white flex items-center gap-1 shadow-sm" title="Active: MySQL Relational Database">
+                            <span>🐬 MySQL</span>
+                        </button>
+                        <button type="button" id="dashBtnMongo" onclick="switchDashboardDatabase('mongodb')" class="px-2.5 py-1 text-xs font-bold rounded-md transition text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center gap-1" title="Switch to MongoDB Atlas NoSQL">
+                            <span>🍃 MongoDB</span>
+                        </button>
+                    </div>
+
                     <!-- DB Connection Status Pill -->
                     <div class="hidden sm:flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800" id="dashDbStatus">
                         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        <span id="dashDbText">MySQL Connected</span>
+                        <span id="dashDbText">MySQL Active</span>
                     </div>
 
                     <!-- Book Ticket Quick Button (Passenger only) -->
@@ -1327,6 +1337,65 @@
     <script>
         const API_URL = "/api";
 
+        // -------------------------------------------------------------
+        // DUAL DATABASE CONTEXT (MySQL vs MongoDB Atlas)
+        // -------------------------------------------------------------
+        let activeDatabase = localStorage.getItem('railway_active_db') || 'mysql';
+
+        // Intercept all fetch requests to transparently include x-database header
+        const _nativeFetch = window.fetch;
+        window.fetch = function(url, options = {}) {
+            options = options || {};
+            options.headers = options.headers || {};
+            if (typeof options.headers.set === 'function') {
+                options.headers.set('x-database', activeDatabase);
+            } else if (Array.isArray(options.headers)) {
+                options.headers.push(['x-database', activeDatabase]);
+            } else {
+                options.headers['x-database'] = activeDatabase;
+            }
+            return _nativeFetch(url, options);
+        };
+
+        function switchDashboardDatabase(dbType) {
+            activeDatabase = dbType;
+            localStorage.setItem('railway_active_db', dbType);
+            updateDashboardDatabaseUI();
+            checkDbHealth();
+            showToast(`Switched active database to ${dbType === 'mongodb' ? 'MongoDB Atlas' : 'MySQL'}`, "fa-solid fa-server");
+
+            // Refresh views with newly selected database
+            if (currentUser) {
+                if (activePortal === 'Admin') {
+                    loadAdminStats();
+                    loadAllTrains();
+                    loadAdminBookings();
+                    loadAdminLogs();
+                    loadAdminUsers();
+                } else {
+                    fetchUserBookings();
+                }
+            }
+            loadStations();
+        }
+
+        function updateDashboardDatabaseUI() {
+            const isMongo = activeDatabase === 'mongodb';
+            const btnMysql = document.getElementById("dashBtnMysql");
+            const btnMongo = document.getElementById("dashBtnMongo");
+            const textEl = document.getElementById("dashDbText");
+
+            if (isMongo) {
+                if (btnMongo) btnMongo.className = "px-2.5 py-1 text-xs font-bold rounded-md transition bg-emerald-600 text-white flex items-center gap-1 shadow-sm";
+                if (btnMysql) btnMysql.className = "px-2.5 py-1 text-xs font-bold rounded-md transition text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center gap-1";
+                if (textEl) textEl.textContent = "🍃 MongoDB Active";
+            } else {
+                if (btnMysql) btnMysql.className = "px-2.5 py-1 text-xs font-bold rounded-md transition bg-blue-600 text-white flex items-center gap-1 shadow-sm";
+                if (btnMongo) btnMongo.className = "px-2.5 py-1 text-xs font-bold rounded-md transition text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center gap-1";
+                if (textEl) textEl.textContent = "🐬 MySQL Active";
+            }
+        }
+
         // Global State
         let currentUser = null;
         let userBookings = [];
@@ -1373,6 +1442,7 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             initPortalTheme();
+            updateDashboardDatabaseUI();
             initSession();
             checkDbHealth();
             initDashDates();
@@ -1471,19 +1541,25 @@
             }
         }
 
-        // Check MySQL Database Connection Health
+        // Check Database Connection Health (Reports Both MySQL & MongoDB)
         async function checkDbHealth() {
             const textEl = document.getElementById("dashDbText");
             try {
                 const res = await fetch(`${API_URL}/db-status`);
                 const data = await res.json();
-                if (res.ok && data.status === 'connected') {
-                    textEl.textContent = `MySQL: ${data.database}`;
+                if (res.ok) {
+                    const isMongo = activeDatabase === 'mongodb';
+                    const activeEngine = isMongo ? data.mongodb : data.mysql;
+                    if (textEl) {
+                        textEl.textContent = isMongo 
+                            ? `🍃 MongoDB: ${activeEngine?.status || 'Active'}`
+                            : `🐬 MySQL: ${activeEngine?.status || 'Active'}`;
+                    }
                 } else {
-                    textEl.textContent = "MySQL: Disconnected";
+                    if (textEl) textEl.textContent = "Standby Mode";
                 }
             } catch {
-                textEl.textContent = "Server Offline";
+                if (textEl) textEl.textContent = "Server Offline";
             }
         }
 
